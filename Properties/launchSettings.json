@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "GreenHill (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "GreenHill (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

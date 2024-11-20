@@ -1,0 +1,25 @@
+<Project>
+  <!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
+  <Target Name="WorkaroundDotnetSdk43339" BeforeTargets="ResolvePackageAssets" Condition=" '$(MSBuildRuntimeType)' == 'Full' and $([MSBuild]::VersionLessThan($(MSBuildVersion), 17.12.0))">
+    <PrimeSystemTextJson804 />
+  </Target>
+  <UsingTask
+    TaskName="PrimeSystemTextJson804"
+    TaskFactory="RoslynCodeTaskFactory"
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" >
+    <Task>
+      <Code Type="Fragment" Language="cs">
+<![CDATA[
+try
+{
+    System.Reflection.Assembly.LoadFrom(@"$(MicrosoftNETBuildTasksDirectoryRoot)\..\..\..\DotnetTools\dotnet-format\BuildHost-net472\System.Text.Json.dll");
+}
+catch
+{
+    // Best effort: if something moves in the SDK don't break the build.
+}
+]]>
+      </Code>
+    </Task>
+  </UsingTask>
+</Project>

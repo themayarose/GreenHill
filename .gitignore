@@ -5,6 +5,9 @@
 
 # dotenv files
 .env
+.vscode
+.vs
+Package.appxmanifest
 
 
 # User-specific files
@@ -35,6 +38,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+Package/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

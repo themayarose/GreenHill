@@ -1,0 +1,41 @@
+<ContentDialog
+    x:Class="GreenHill.Views.LoginDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    mc:Ignorable="d"
+>
+    <Grid
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch"
+        RowSpacing="8"
+    >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height=".5*" />
+            <RowDefinition Height=".5*" />
+        </Grid.RowDefinitions>
+
+        
+        <TextBlock
+            Grid.Row="0"
+            Text="Use an app password to increase security."
+            Margin="0,0,0,16"
+        />
+
+        <TextBox
+            Grid.Row="1"
+            PlaceholderText="Username (without the @)"
+            Text="{x:Bind ViewModel.UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+        />
+
+        <PasswordBox
+            Grid.Row="2"
+            PlaceholderText="Password"
+            Password="{x:Bind ViewModel.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+        />
+    </Grid>
+
+</ContentDialog>
