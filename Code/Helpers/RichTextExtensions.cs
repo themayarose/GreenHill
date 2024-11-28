@@ -146,7 +146,7 @@ public static partial class RichTextExtensions {
             if ((current.Index?.ByteStart ?? int.MaxValue) > offset + textBytes.Length) continue;
             if ((current.Index?.ByteEnd ?? int.MaxValue) > offset + textBytes.Length) continue;
 
-            if ((current.Index?.ByteStart ?? 0) <= (prev?.Index?.ByteEnd ?? 0)) {
+            if ((current.Index?.ByteStart ?? 0) <= (prev?.Index?.ByteEnd ?? -1)) {
                 // overlaps
                 continue;
             }

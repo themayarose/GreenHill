@@ -140,12 +140,27 @@
         >
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="450" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <TextBox
+                <Grid
                     Grid.Column="0"
+                    Margin="16"
+                    CornerRadius="8"
+                    BorderThickness="1"
+                    BorderBrush="{StaticResource CardStrokeColorDefaultBrush}"
+                    Background="{StaticResource LayerOnMicaBaseAltFillColorDefault}"
+                >
+                    <v:BlueskyControl
+                        Connection="{x:Bind ViewModel.Connection, Mode=OneWay}"
+                        Request="{x:Bind ViewModel.StartOfTimelineRequest, Mode=OneWay}"
+                    />
+                </Grid>
+
+                <!-- <TextBox
+                    Grid.Column="1"
                     Margin="16"
                     VerticalAlignment="Stretch"
                     HorizontalAlignment="Stretch"
@@ -154,7 +169,7 @@
                 />
 
                 <ScrollView
-                    Grid.Column="1"
+                    Grid.Column="2"
                     Margin="16"
                     Padding="0"
                 >
@@ -170,7 +185,7 @@
                             />
                         </i:Interaction.Behaviors>
                     </RichTextBlock>
-                </ScrollView>
+                </ScrollView> -->
             </Grid>
         </NavigationView>
 

@@ -1,4 +1,3 @@
-using System.Windows.Input;
 using FishyFlip.Models;
 using GreenHill.Helpers;
 using GreenHill.Services;
@@ -16,12 +15,72 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
     [ObservableProperty] private double gridMaxHeight = double.PositiveInfinity;
     [ObservableProperty] private double gridRowMaxHeight = double.PositiveInfinity;
 
+    public void LoadEmbeddedVideo(object? _, RoutedEventArgs __) {
+        if (!ViewModel.HasEmbeddedVideo) return;
+        if (ViewModel.EmbeddedVideo?.AspectRatio is not AspectRatio ratio) return;
+
+        var height = PostColumn.ActualWidth / ratio.Width * ratio.Height;
+
+        MediaPlayer.Height = height;
+    }
+
     public void LoadEmbeddedPictures() {
         PicturesView.Items.Clear();
 
         foreach (var pic in ViewModel.EmbeddedPictures) {
             PicturesView.Items.Add(BuildImageItem(pic));
         }
+    }
+
+    public void LoadOriginalPost() {
+        OriginalPostContainer.Children.Clear();
+        
+        if (!ViewModel.IsReply || ViewModel.IsRepost || ViewModel.IsQuote || ViewModel.OriginalPost is null) return;
+
+        PostControl post = new () { ShowThreadLine = true };
+
+        post.MakeBinding(ViewModel, ConnectionProperty, nameof(ViewModel.Connection));
+        post.MakeBinding(ViewModel, LinksCommandProperty, nameof(ViewModel.LinksCommand));
+        post.MakeBinding(ViewModel, DisplayProfileCommandProperty, nameof(ViewModel.RequestDisplayProfileWithProfileCommand));
+        post.MakeBinding(ViewModel, DisplayPostCommandProperty, nameof(ViewModel.RequestDisplayPostCommand));
+        post.MakeBinding(ViewModel, DisplayUserListCommandProperty, nameof(ViewModel.RequestDisplayUserListCommand));
+        post.MakeBinding(ViewModel, PostProperty, nameof(ViewModel.OriginalPost));
+
+        OriginalPostContainer.Children.Add(post);
+    }
+
+    public void LoadMostRecentParent() {
+        ParentReplyContainer.Children.Clear();
+
+        if (!ViewModel.ShowParentReply || ViewModel.IsRepost || ViewModel.IsQuote) return;
+
+        PostControl post = new () { ShowThreadLine = true, ShowReplyTo = ViewModel.ShowThreadExtensions };
+
+        post.MakeBinding(ViewModel, ConnectionProperty, nameof(ViewModel.Connection));
+        post.MakeBinding(ViewModel, LinksCommandProperty, nameof(ViewModel.LinksCommand));
+        post.MakeBinding(ViewModel, DisplayProfileCommandProperty, nameof(ViewModel.RequestDisplayProfileWithProfileCommand));
+        post.MakeBinding(ViewModel, DisplayPostCommandProperty, nameof(ViewModel.RequestDisplayPostCommand));
+        post.MakeBinding(ViewModel, DisplayUserListCommandProperty, nameof(ViewModel.RequestDisplayUserListCommand));
+        post.MakeBinding(ViewModel, PostProperty, nameof(ViewModel.ParentReply));
+
+        ParentReplyContainer.Children.Add(post);
+    }
+
+    public void LoadEmbeddedQuote() {
+        QuoteContainer.Children.Clear();
+
+        if (!ViewModel.HasEmbeddedQuote || ViewModel.IsQuote) return;
+
+        PostControl post = new () { IsQuote = true };
+
+        post.MakeBinding(ViewModel, ConnectionProperty, nameof(ViewModel.Connection));
+        post.MakeBinding(ViewModel, LinksCommandProperty, nameof(ViewModel.LinksCommand));
+        post.MakeBinding(ViewModel, DisplayProfileCommandProperty, nameof(ViewModel.RequestDisplayProfileWithProfileCommand));
+        post.MakeBinding(ViewModel, DisplayPostCommandProperty, nameof(ViewModel.RequestDisplayPostCommand));
+        post.MakeBinding(ViewModel, DisplayUserListCommandProperty, nameof(ViewModel.RequestDisplayUserListCommand));
+        post.MakeBinding(ViewModel, PostProperty, nameof(ViewModel.EmbeddedQuote));
+
+        QuoteContainer.Children.Add(post);
     }
 
     public void ResizeGrid(object _, RoutedEventArgs __) {
@@ -43,15 +102,16 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
 
             foreach (var (i, elem) in PicturesView.Items.WithIndex()) {
                 if (elem is not GridViewItem item) continue;
+                if (item.Content is not Microsoft.UI.Xaml.Controls.Image image) continue;
 
-                if (i == 0 && count == 3) {
-                    item.Height = 2 * (GridRowMaxHeight + 4);
-                    item.MaxHeight = 2 * (GridRowMaxHeight + 4);
-                }
-                else {
-                    item.Height = GridRowMaxHeight;
-                    item.MaxHeight = GridRowMaxHeight;
-                }
+                var height = i == 0 && count == 3 ?
+                    2 * (GridRowMaxHeight + 4) :
+                    GridRowMaxHeight;
+
+                item.Height = height;
+                item.MaxHeight = height;
+                image.Height = height;
+                image.MaxHeight = height;
             }
         }
     }
@@ -108,12 +168,70 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
                 self.ViewModel.Post = (FeedViewPost?) a.NewValue;
 
                 self.LoadEmbeddedPictures();
+                self.LoadEmbeddedQuote();
+                self.LoadOriginalPost();
+                self.LoadMostRecentParent();
+
+                if ((self.ViewModel.IsQuote || self.ViewModel.IsRepost) && self.ViewModel.Post?.Reply is not null) {
+                    self.ShowReplyTo = true;
+                }
             })
         );
 
     public FeedViewPost? Post {
         get => (FeedViewPost?) GetValue(PostProperty);
         set => SetValue(PostProperty, value);
+    }
+
+    public static readonly DependencyProperty IsQuoteProperty =
+        DependencyProperty.Register(
+            "IsQuote",
+            typeof(bool),
+            typeof(PostControl),
+            new (defaultValue: null, propertyChangedCallback: (s, a) => {
+                if (s is not PostControl self) return;
+
+                self.ViewModel.IsQuote = (bool) a.NewValue;
+            })
+        );
+
+    public bool IsQuote {
+        get => (bool) GetValue(IsQuoteProperty);
+        set => SetValue(IsQuoteProperty, value);
+    }
+
+    public static readonly DependencyProperty ShowThreadLineProperty =
+        DependencyProperty.Register(
+            "ShowThreadLine",
+            typeof(bool),
+            typeof(PostControl),
+            new (defaultValue: null, propertyChangedCallback: (s, a) => {
+                if (s is not PostControl self) return;
+
+                self.ViewModel.ShowThreadLine = (bool) a.NewValue;
+            })
+        );
+    
+    public bool ShowThreadLine {
+        get => (bool) GetValue(ShowThreadLineProperty);
+        set => SetValue(ShowThreadLineProperty, value);
+    }
+
+    public static readonly DependencyProperty ShowReplyToProperty =
+        DependencyProperty.Register(
+            "ShowReplyTo",
+            typeof(bool),
+            typeof(PostControl),
+            new (defaultValue: null, propertyChangedCallback: (s, a) => {
+                if (s is not PostControl self) return;
+
+                self.ViewModel.ShowReplyTo = (bool) a.NewValue;
+            })
+        );
+    
+    public bool ShowReplyTo {
+        get => (bool) GetValue(ShowReplyToProperty);
+        set => SetValue(ShowReplyToProperty, value);
     }
 
     public static readonly DependencyProperty DisplayProfileCommandProperty =

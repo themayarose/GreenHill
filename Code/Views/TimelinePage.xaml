@@ -1,0 +1,32 @@
+<v:TimelineBasePage
+    x:Class="GreenHill.Views.TimelinePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:v="using:GreenHill.Views"
+    xmlns:h="using:GreenHill.Helpers"
+    xmlns:i="using:Microsoft.Xaml.Interactivity" 
+    xmlns:b="using:GreenHill.Behaviors" 
+    xmlns:ffm="using:FishyFlip.Models"
+    xmlns:ui="using:CommunityToolkit.WinUI"
+    mc:Ignorable="d"
+    x:Name="Self"
+>
+    <ItemsView
+        ItemsSource="{x:Bind ViewModel.Posts}"
+    >
+        <ItemsView.ItemTemplate>
+            <DataTemplate x:DataType="ffm:FeedViewPost">
+                <ItemContainer>
+                    <v:PostControl
+                        Connection="{Binding ViewModel.Connection, ElementName=Self}"
+                        Post="{x:Bind (ffm:FeedViewPost)}"
+                        DisplayProfileCommand="{Binding ViewModel.Parent.DisplayProfileCommand, ElementName=Self}"
+                        LinksCommand="{Binding ViewModel.Parent.HyperlinkClickedCommand, ElementName=Self}"
+                    />
+                </ItemContainer>
+            </DataTemplate>
+        </ItemsView.ItemTemplate>
+    </ItemsView>
+</v:TimelineBasePage>

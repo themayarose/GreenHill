@@ -29,6 +29,7 @@ public partial class App : Application {
         services.AddTransient<PostViewModel>();
         services.AddTransient<ProfileViewModel>();
         services.AddTransient<ProfileFeedViewModel>();
+        services.AddTransient<TimelineViewModel>();
 
         services.AddSingleton<IConnectionService, ConnectionService>();
         services.AddSingleton<ICredentialService, CredentialService>();

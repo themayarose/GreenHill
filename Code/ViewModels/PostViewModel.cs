@@ -7,6 +7,9 @@ using Humanizer;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.Messaging.Messages;
+using Microsoft.UI.Xaml.Documents;
+using Windows.Media.Playback;
+using Windows.Media.Core;
 
 namespace GreenHill.ViewModels;
 
@@ -20,14 +23,31 @@ public record EmbeddedPicture {
     public int Column { get; set; }
 }
 
-public partial class PostViewModel : BaseViewModel, IRecipient<PropertyChangedMessage<FeedViewPost?>> {
+public record EmbeddedExternal {
+    public ImageSource? Thumb { get; set; }
+    public string? Title { get; set; }
+    public string? Description { get; set; }
+    public Uri? Uri { get; set; }
+}
+
+public record EmbeddedVideo {
+    public IMediaPlaybackSource? Source { get; set; }
+    public AspectRatio? AspectRatio { get; set; }
+    public ImageSource? Thumb { get; set; }
+}
+
+public partial class PostViewModel : BaseViewModel {
     [ObservableProperty] private SkyConnection? connection;
 
     [NotifyPropertyChangedFor(nameof(Handle))]
     [NotifyPropertyChangedFor(nameof(Avatar))]
     [NotifyPropertyChangedFor(nameof(IsRepost))]
+    [NotifyPropertyChangedFor(nameof(IsReply))]
+    [NotifyPropertyChangedFor(nameof(OriginalPost))]
+    [NotifyPropertyChangedFor(nameof(ParentReply))]
+    [NotifyPropertyChangedFor(nameof(ShowThreadExtensions))]
+    [NotifyPropertyChangedFor(nameof(ShowParentReply))]
     [NotifyPropertyChangedFor(nameof(ContainsText))]
-    [NotifyPropertyChangedFor(nameof(HasEmbed))]
     [NotifyPropertyChangedFor(nameof(HasReplies))]
     [NotifyPropertyChangedFor(nameof(HasReposts))]
     [NotifyPropertyChangedFor(nameof(HasLikes))]
@@ -35,15 +55,23 @@ public partial class PostViewModel : BaseViewModel, IRecipient<PropertyChangedMe
     [NotifyPropertyChangedFor(nameof(PostTime))]
     [NotifyPropertyChangedFor(nameof(RepostTimeAgo))]
     [NotifyPropertyChangedFor(nameof(RepostTime))]
-    [NotifyPropertyChangedFor(nameof(ControlPadding))]
-    [NotifyPropertyChangedFor(nameof(EmbeddedPictures))]
     [NotifyPropertyChangedFor(nameof(HasEmbeddedPictures))]
+    [NotifyPropertyChangedFor(nameof(EmbeddedPictures))]
+    [NotifyPropertyChangedFor(nameof(HasEmbeddedQuote))]
+    [NotifyPropertyChangedFor(nameof(EmbeddedQuote))]
+    [NotifyPropertyChangedFor(nameof(HasExternalEmbed))]
+    [NotifyPropertyChangedFor(nameof(ExternalEmbed))]
+    [NotifyPropertyChangedFor(nameof(HasEmbeddedVideo))]
+    [NotifyPropertyChangedFor(nameof(EmbeddedVideo))]
+    [NotifyPropertyChangedFor(nameof(LikedByViewer))]
+    [NotifyPropertyChangedFor(nameof(LikeGlyph))]
+    [NotifyPropertyChangedFor(nameof(LikeColor))]
+    [NotifyPropertyChangedFor(nameof(RepostedByViewer))]
+    [NotifyPropertyChangedFor(nameof(RepostColor))]
     [NotifyPropertyChangedRecipients]
     [ObservableProperty] private FeedViewPost? post;
 
-    public bool IsRepost => Post?.Reason is not null;
-
-    public bool HasEmbed => Post?.Post?.Embed is not null;
+    public bool IsRepost => Post?.Reason is not null && !IsQuote;
 
     public string Handle => (Post?.Post?.Author?.Handle is null) ?
         string.Empty :
@@ -69,7 +97,22 @@ public partial class PostViewModel : BaseViewModel, IRecipient<PropertyChangedMe
         new BitmapImage() { UriSource = new (Post.Post.Author.Avatar) } :
         null;
 
-    public bool HasEmbeddedPictures => Post?.Post?.Embed is ImageViewEmbed;
+    public bool LikedByViewer => Post?.Post?.Viewer?.Like is not null;
+
+    public string LikeGlyph => LikedByViewer ? "\uEB52" : "\uEB51";
+
+    public SolidColorBrush? LikeColor => LikedByViewer ?
+        App.Current.Resources["AccentTextFillColorPrimaryBrush"] as SolidColorBrush :
+        App.Current.Resources["TextFillColorPrimaryBrush"] as SolidColorBrush ;
+
+    public bool RepostedByViewer => Post?.Post?.Viewer?.Repost is not null;
+
+    public SolidColorBrush? RepostColor => RepostedByViewer ?
+        App.Current.Resources["AccentTextFillColorPrimaryBrush"] as SolidColorBrush :
+        App.Current.Resources["TextFillColorPrimaryBrush"] as SolidColorBrush ;
+
+    public bool HasEmbeddedPictures => Post?.Post?.Embed is ImageViewEmbed ||
+        Post?.Post?.Embed is RecordWithMediaViewEmbed embed && embed.Embed is ImageViewEmbed;
 
     public List<EmbeddedPicture> EmbeddedPictures => Post?.Post?.Embed is ImageViewEmbed embed ?
         [..
@@ -100,8 +143,89 @@ public partial class PostViewModel : BaseViewModel, IRecipient<PropertyChangedMe
                 }
             }
         ] :
+        (Post?.Post?.Embed is RecordWithMediaViewEmbed extEmbed && extEmbed.Embed is ImageViewEmbed innEmbed) ?
+        [..
+            from pair in innEmbed.Images.WithIndex()
+            let image = pair.Value
+            let count = innEmbed.Images.Length
+            select new EmbeddedPicture() {
+                View = image,
+                Fullsize = new BitmapImage() { UriSource = new (image.Fullsize) },
+                Thumb = new BitmapImage() { UriSource = new (image.Thumb) },
+                RowSpan = count switch {
+                    1 or 2 => 2,
+                    3 => pair.Key == 0 ? 2 : 1,
+                    _ => 1
+                },
+                ColumnSpan = count switch {
+                    1 => 2,
+                    _ => 1,
+                },
+                Row = pair.Key switch {
+                    0 or 1 => 0,
+                    _ => 1
+                },
+                Column = pair.Key switch {
+                    0 => 0,
+                    2 => count == 3 ? 1 : 0,
+                    _ => 1
+                }
+            }
+        ] :
         [];
 
+    public bool HasExternalEmbed => Post?.Post?.Embed is ExternalViewEmbed ||
+        (Post?.Post?.Embed is RecordWithMediaViewEmbed embed && embed.Embed is ExternalViewEmbed)
+    ;
+
+    public EmbeddedExternal? ExternalEmbed => Post?.Post?.Embed is ExternalViewEmbed embed ?
+        new () {
+            Thumb = embed.External?.Thumb is not null ?
+                new BitmapImage() { UriSource = new (embed.External.Thumb) } :
+                null,
+            Title = embed.External?.Title,
+            Description = embed.External?.Description,
+            Uri = embed.External?.Uri is not null ?
+                new (embed.External.Uri) :
+                null
+        } :
+        (Post?.Post?.Embed is RecordWithMediaViewEmbed extEmbed && extEmbed.Embed is ExternalViewEmbed innEmbed) ?
+        new () {
+            Thumb = innEmbed.External?.Thumb is not null ?
+                new BitmapImage() { UriSource = new (innEmbed.External.Thumb) } :
+                null,
+            Title = innEmbed.External?.Title,
+            Description = innEmbed.External?.Description,
+            Uri = innEmbed.External?.Uri is not null ?
+                new (innEmbed.External.Uri) :
+                null
+        } :
+        null;
+
+    public bool HasEmbeddedVideo => Post?.Post?.Embed is VideoViewEmbed ||
+        (Post?.Post?.Embed is RecordWithMediaViewEmbed embed && embed.Embed is VideoViewEmbed);
+
+    public EmbeddedVideo? EmbeddedVideo => (Post?.Post?.Embed is VideoViewEmbed embed) ?
+        new () {
+            Source = embed.Playlist is not null ? 
+                MediaSource.CreateFromUri(new (embed.Playlist)) :
+                null,
+            AspectRatio = embed.AspectRatio,
+            Thumb = embed.Thumbnail is not null ?
+                new BitmapImage() { UriSource = new (embed.Thumbnail) } :
+                null
+        } :
+        (Post?.Post?.Embed is RecordWithMediaViewEmbed extEmbed && extEmbed.Embed is VideoViewEmbed innEmbed) ?
+        new () {
+            Source = innEmbed.Playlist is not null ? 
+                MediaSource.CreateFromUri(new (innEmbed.Playlist)) :
+                null,
+            AspectRatio = innEmbed.AspectRatio,
+            Thumb = innEmbed.Thumbnail is not null ?
+                new BitmapImage() { UriSource = new (innEmbed.Thumbnail) } :
+                null
+        } :
+        null;
 
     public bool ContainsText => (Post?.Post?.Record?.Text?.Trim() ?? string.Empty) != string.Empty;
 
@@ -109,29 +233,50 @@ public partial class PostViewModel : BaseViewModel, IRecipient<PropertyChangedMe
     public bool HasReposts => (Post?.Post?.RepostCount ?? 0) > 0;
     public bool HasLikes => (Post?.Post?.LikeCount ?? 0) > 0;
 
-    public Thickness ControlPadding => new (
-        (Post?.Reply is not null) ? 32 : 0,
-        0,
-        0,
-        0
-    );
+    public bool HasEmbeddedQuote => Post?.Post?.Embed is RecordViewEmbed or RecordWithMediaViewEmbed && !IsQuote;
+
+    public FeedViewPost? EmbeddedQuote => Post?.Post?.Embed is RecordViewEmbed embed && embed.Post is not null ?
+        new (embed.Post, null, null, null) :
+        Post?.Post?.Embed is RecordWithMediaViewEmbed rmEmbed  && rmEmbed.Record is not null ? 
+        new (rmEmbed.Record.Post, null, null, null) :
+        null;
+
+    public bool IsReply => Post?.Reply is not null && !IsQuote;
+
+    public FeedViewPost? OriginalPost => Post?.Reply?.Root is not null ?
+        new (Post.Reply.Root, null, null, null) :
+        null;
+
+    public FeedViewPost? ParentReply => Post?.Reply?.Parent is not null ?
+        new (Post.Reply.Parent, null, null, null) :
+        null;
+
+    public bool ShowParentReply => Post?.Reason is null &&
+        Post?.Reply?.Parent is not null &&
+        Post?.Reply?.Root is not null &&
+        Post.Reply.Root.Cid != Post.Reply.Parent.Cid;
+
+    public bool ShowThreadExtensions => ShowParentReply &&
+        Post?.Reply?.Parent?.Record?.Reply?.Parent?.Cid is not null &&
+        Post.Reply.Parent.Record.Reply?.Parent.Cid != Post?.Reply?.Root?.Cid;
 
     [ObservableProperty] private IRelayCommand? displayProfileCommand;
     [ObservableProperty] private IRelayCommand? displayPostCommand;
     [ObservableProperty] private IRelayCommand? displayUserListCommand;
     [ObservableProperty] private IRelayCommand? linksCommand;
 
-    public ObservableCollection<FeedViewPost> Replies { get; } = new();
+    [NotifyPropertyChangedFor(nameof(ShowInteractionButtons))]
+    [NotifyPropertyChangedFor(nameof(ShowBigAvatar))]
+    [NotifyPropertyChangedFor(nameof(IsReply))]
+    [ObservableProperty] private bool isQuote = false;
 
-    public PostViewModel() {
-        Messenger.RegisterAll(this);
-    }
+    [ObservableProperty] private bool showReplyTo = false;
 
-    public void Receive(PropertyChangedMessage<FeedViewPost?> msg) {
-        if (ReferenceEquals(msg?.Sender, this) && msg.NewValue is not null) {
-            Replies.Clear();
-        }
-    }
+    public bool ShowInteractionButtons => !IsQuote;
+
+    public bool ShowBigAvatar => !IsQuote;
+
+    [ObservableProperty] private bool showThreadLine = false;
 
     [RelayCommand]
     public async Task RequestDisplayProfileAsync(ATDid did) {
@@ -174,30 +319,6 @@ public partial class PostViewModel : BaseViewModel, IRecipient<PropertyChangedMe
         else {
             DisplayUserListCommand?.Execute(null);
         }
-    }
-
-    [RelayCommand]
-    public async Task FetchRepliesAsync() {
-        if (Connection is null) return;
-        if (Post?.Post?.Uri is not ATUri uri) return;
-
-        Replies.Clear();
-
-        var thread = await Connection.GetPostThreadAsync(uri, 1);
-
-        if (thread.Thread.Replies is not IEnumerable<ThreadView> views) return;
-
-        var replies = 
-            from view in views
-            where view.Post is not null
-            select new FeedViewPost(
-                view.Post!,
-                new (thread.Thread.Post, thread.Thread.Parent?.Post),
-                null,
-                null
-            );
-        
-        foreach (var reply in replies) Replies.Add(reply);
     }
 
 }

@@ -14,59 +14,61 @@
     mc:Ignorable="d"
     x:Name="Self"
 >
-    <ctui:HeaderedItemsControl ItemsSource="{x:Bind ViewModel.UserPosts}">
-        <ctui:HeaderedItemsControl.Header>
-            <Grid
-                Padding="8,4"
-                BorderThickness="0,0,0,1"
-                Background="{StaticResource AcrylicBackgroundFillColorDefaultBrush}"
-                BorderBrush="{StaticResource CardStrokeColorDefaultBrush}"
-            >
-                <i:Interaction.Behaviors>
-                    <ctb:StickyHeaderBehavior />
-                </i:Interaction.Behaviors>
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <AppBarButton
-                    Grid.Column="0"
-                    LabelPosition="Collapsed"
-                    Width="40"
-                    Command="{x:Bind ViewModel.Parent.RequestGoBackCommand}"
-                    IsEnabled="{x:Bind ViewModel.Parent.CanGoBack, Mode=OneWay}"
+    <ScrollView>
+        <ctui:HeaderedItemsControl ItemsSource="{x:Bind ViewModel.UserPosts}">
+            <ctui:HeaderedItemsControl.Header>
+                <Grid
+                    Padding="8,4"
+                    BorderThickness="0,0,0,1"
+                    Background="{StaticResource AcrylicBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{StaticResource CardStrokeColorDefaultBrush}"
                 >
-                    <AppBarButton.Icon>
-                        <FontIcon Glyph="&#xE72B;" FontSize="12" />
-                    </AppBarButton.Icon>
-                </AppBarButton>
+                    <i:Interaction.Behaviors>
+                        <ctb:StickyHeaderBehavior />
+                    </i:Interaction.Behaviors>
 
-                <TextBlock
-                    Grid.Column="0"
-                    Grid.ColumnSpan="2"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Style="{StaticResource SubtitleTextBlockStyle}"
-                >
-                    <Run Text="Posts by" />
-                    <Run Text="{x:Bind ViewModel.Profile.DisplayName, Mode=OneWay}" />
-                </TextBlock>
-            </Grid>
-        </ctui:HeaderedItemsControl.Header>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-        <ctui:HeaderedItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="ffm:FeedViewPost">
-                <ItemContainer>
-                    <v:PostControl
-                        Connection="{Binding ViewModel.Connection, ElementName=Self}"
-                        Post="{x:Bind (ffm:FeedViewPost), Mode=OneWay}"
-                        DisplayProfileCommand="{Binding ViewModel.Parent.DisplayProfileCommand, ElementName=Self}"
-                        LinksCommand="{Binding ViewModel.Parent.HyperlinkClickedCommand, ElementName=Self}"
-                    />
-                </ItemContainer>
-            </DataTemplate>
-        </ctui:HeaderedItemsControl.ItemTemplate>
-    </ctui:HeaderedItemsControl>
+                    <AppBarButton
+                        Grid.Column="0"
+                        LabelPosition="Collapsed"
+                        Width="40"
+                        Command="{x:Bind ViewModel.Parent.RequestGoBackCommand}"
+                        IsEnabled="{x:Bind ViewModel.Parent.CanGoBack, Mode=OneWay}"
+                    >
+                        <AppBarButton.Icon>
+                            <FontIcon Glyph="&#xE72B;" FontSize="12" />
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SubtitleTextBlockStyle}"
+                    >
+                        <Run Text="Posts by" />
+                        <Run Text="{x:Bind ViewModel.Profile.DisplayName, Mode=OneWay}" />
+                    </TextBlock>
+                </Grid>
+            </ctui:HeaderedItemsControl.Header>
+
+            <ctui:HeaderedItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="ffm:FeedViewPost">
+                    <ItemContainer>
+                        <v:PostControl
+                            Connection="{Binding ViewModel.Connection, ElementName=Self}"
+                            Post="{x:Bind (ffm:FeedViewPost), Mode=OneWay}"
+                            DisplayProfileCommand="{Binding ViewModel.Parent.DisplayProfileCommand, ElementName=Self}"
+                            LinksCommand="{Binding ViewModel.Parent.HyperlinkClickedCommand, ElementName=Self}"
+                        />
+                    </ItemContainer>
+                </DataTemplate>
+            </ctui:HeaderedItemsControl.ItemTemplate>
+        </ctui:HeaderedItemsControl>
+    </ScrollView>
 </v:ProfileFeedBasePage>

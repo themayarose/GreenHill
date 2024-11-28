@@ -134,4 +134,14 @@ public class SkyConnection {
 
         return thread;
     }
+
+    public async Task<Timeline> GetTimelineAsync(string? cursor = null) {
+        var (timeline, err) = await Protocol.Feed.GetTimelineAsync(cursor: cursor);
+
+        if (timeline is null) {
+            throw new InvalidDataException(err?.Detail?.Message ?? string.Empty);
+        }
+
+        return timeline;
+    }
 }

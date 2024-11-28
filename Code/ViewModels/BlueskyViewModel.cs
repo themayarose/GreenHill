@@ -21,6 +21,11 @@ public abstract record PageRequest {
         public override Type Target { get; } = typeof(Views.ProfileFeedPage);
         public FeedProfile? Profile { get; set; }
     }
+
+    public record TimelinePage : PageRequest {
+        public override Type Target { get; } = typeof(Views.TimelinePage);
+        public string Cursor { get; set; } = string.Empty;
+    }
 }
 
 public record NavigationRequestedEventArgs(PageRequest request) {

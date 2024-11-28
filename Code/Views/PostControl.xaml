@@ -15,324 +15,571 @@
     HorizontalAlignment="Stretch"
     x:Name="Self"
 >
-    <Grid 
-        Margin="{x:Bind ViewModel.ControlPadding, Mode=OneWay}"
-        Padding="8"
-        RowSpacing="4" 
-        ColumnSpacing="12" 
-        HorizontalAlignment="Stretch"
+    <Grid
     >
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto" /> <!-- Row=0: repost -->
-            <RowDefinition Height="auto" /> <!-- Row=1: pic, name, time -->
-            <RowDefinition Height="auto" /> <!-- Row=2: pic, text -->
-            <RowDefinition Height="auto" /> <!-- Row=3: embedded pictures -->
-            <RowDefinition Height="auto" /> <!-- Row=4: embedded others -->
-            <RowDefinition Height="auto" /> <!-- Row=5: stats, actions -->
-            <RowDefinition Height="auto" /> <!-- Row=6: replies -->
+            <RowDefinition Height="auto" /> <!-- Row=0: Original post -->
+            <RowDefinition Height="auto" />   <!-- Row=1: Separator for hidden posts -->
+            <RowDefinition Height="auto" /> <!-- Row=2: Previous reply -->
+            <RowDefinition Height="auto" /> <!-- Row=3: Actual post -->
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="auto" /> <!-- Col=0; pic -->
-            <ColumnDefinition x:Name="PostColumn" Width="*" /> <!-- Col=1; text -->
+            <ColumnDefinition Width="64" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <TextBlock
+        <Grid
             Grid.Row="0"
             Grid.Column="0"
             Grid.ColumnSpan="2"
-            Style="{StaticResource CaptionTextBlockStyle}"
-            Foreground="{StaticResource TextFillColorSecondaryBrush}"
-            Visibility="{x:Bind ViewModel.IsRepost, Mode=OneWay}"
-            TextTrimming="CharacterEllipsis"
-            ToolTipService.ToolTip="{x:Bind ViewModel.RepostTime, Mode=OneWay}"
-        >
-            <Run Text="Reposted by" />
-            <Hyperlink
-                ui:HyperlinkExtensions.Command="{x:Bind ViewModel.RequestDisplayProfileCommand}"
-                ui:HyperlinkExtensions.CommandParameter="{x:Bind ViewModel.Post.Reason.By.Did, Mode=OneWay}"
-            >
-                <Run Text="{x:Bind ViewModel.Post.Reason.By.DisplayName, Mode=OneWay}" />
-            </Hyperlink>
-            <Run Text="{x:Bind ViewModel.RepostTimeAgo, Mode=OneWay}" />
-        </TextBlock>
+            x:Name="OriginalPostContainer"
+        />
 
-        <PersonPicture
+        <Grid
             Grid.Row="1"
             Grid.Column="0"
-            Grid.RowSpan="2"
-            ProfilePicture="{x:Bind ViewModel.Avatar, Mode=OneWay}"
-            VerticalAlignment="Top"
-            Height="48"
-            Width="48"
-        />
-        
+            Height="36"
+            Visibility="{x:Bind ViewModel.ShowThreadExtensions, Mode=OneWay}"
+        >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border
+                Grid.Row="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Stretch"
+                Width="1"
+                BorderBrush="{StaticResource AccentFillColorDefaultBrush}"
+                BorderThickness="1,0,0,0"
+            />
+
+            <Border
+                Grid.Row="3"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Stretch"
+                Width="1"
+                BorderBrush="{StaticResource AccentFillColorDefaultBrush}"
+                BorderThickness="1,0,0,0"
+            />
+
+            <Border
+                Grid.Row="5"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Stretch"
+                Width="1"
+                BorderBrush="{StaticResource AccentFillColorDefaultBrush}"
+                BorderThickness="1,0,0,0"
+            />
+        </Grid>
+
         <Grid
             Grid.Row="1"
             Grid.Column="1"
-            ColumnSpacing="8"
+            Height="36"
+            Visibility="{x:Bind ViewModel.ShowThreadExtensions, Mode=OneWay}"
         >
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="auto" />
-            </Grid.ColumnDefinitions>
-
-            <TextBlock
-                Grid.Column="0"
-                TextTrimming="CharacterEllipsis"
+            <AppBarButton
+                LabelPosition="Collapsed"
+                Width="40"
+                Height="44"
                 VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                ToolTipService.ToolTip="View thread..."
             >
-                <Hyperlink
-                    ui:HyperlinkExtensions.Command="{x:Bind ViewModel.RequestDisplayProfileCommand}"
-                    ui:HyperlinkExtensions.CommandParameter="{x:Bind ViewModel.Post.Post.Author.Did, Mode=OneWay}"
-                >
-                    <Run
-                        Text="{x:Bind ViewModel.Post.Post.Author.DisplayName, Mode=OneWay}"
-                        FontWeight="Bold"
-                    />
-                </Hyperlink>
-
-                <Run
-                    Text="{x:Bind ViewModel.Handle, Mode=OneWay}"
-                    Foreground="{StaticResource TextFillColorSecondaryBrush}"
-                />
-            </TextBlock>
-
-            <TextBlock
-                Grid.Column="1"
-                VerticalAlignment="Center"
-                Style="{StaticResource CaptionTextBlockStyle}"
-                ToolTipService.ToolTip="{x:Bind ViewModel.PostTime, Mode=OneWay}"
-            >
-                <Hyperlink>
-                    <Run Text="{x:Bind ViewModel.TimeAgo, Mode=OneWay}" />
-                </Hyperlink>
-            </TextBlock>
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE712;" FontSize="12" />
+                </AppBarButton.Icon>
+            </AppBarButton>
         </Grid>
 
-        <RichTextBlock
+        <Grid
             Grid.Row="2"
-            Grid.Column="1"
-            IsTextSelectionEnabled="True"
-            TextWrapping="WrapWholeWords"
-            VerticalAlignment="Top"
-            Margin="0,-2,0,4"
-            h:RichTextExtensions.Text="{x:Bind ViewModel.Post.Post.Record.Text, Mode=OneWay}"
-            h:RichTextExtensions.Facets="{x:Bind ViewModel.Post.Post.Record.Facets, Mode=OneWay}"
-            Visibility="{x:Bind ViewModel.ContainsText, Mode=OneWay}"
-        >
-            <i:Interaction.Behaviors>
-                <b:HyperlinkClickBehavior
-                    LinksCommand="{x:Bind ViewModel.LinksCommand, Mode=OneWay}"
-                />
-            </i:Interaction.Behaviors>
-        </RichTextBlock>
-
-        <GridView
-            x:Name="PicturesView"
-            Grid.Row="3"
-            Grid.Column="1"
-            Margin="0"
-            Padding="0"
-            Visibility="{x:Bind ViewModel.HasEmbeddedPictures, Mode=OneWay}"
-            SelectionMode="None"
-            IsItemClickEnabled="False"
-        >
-            <GridView.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <Grid
-                        RowSpacing="2"
-                        ColumnSpacing="2"
-                        MaxHeight="{Binding GridMaxHeight, ElementName=Self}"
-                        Loaded="ResizeGrid"
-                    >
-                        <Grid.RowDefinitions>
-                            <RowDefinition
-                                Height="{Binding GridRowHeight, ElementName=Self}"
-                                MaxHeight="{Binding GridRowMaxHeight, ElementName=Self}"
-                            />
-                            <RowDefinition
-                                Height="{Binding GridRowHeight, ElementName=Self}"
-                                MaxHeight="{Binding GridRowMaxHeight, ElementName=Self}"
-                            />
-                        </Grid.RowDefinitions>
-
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width=".5*" />
-                            <ColumnDefinition Width=".5*" />
-                        </Grid.ColumnDefinitions>
-                    </Grid>
-                </ItemsPanelTemplate>
-            </GridView.ItemsPanel>
-        </GridView>
-
-        <Grid
-            Grid.Row="4"
-            Grid.Column="1"
-            Padding="8,4"
-            BorderThickness="1"
-            CornerRadius="8"
-            Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
-            BorderBrush="{StaticResource CardStrokeColorDefaultBrush}"
-            Visibility="{x:Bind ViewModel.HasEmbed, Mode=OneWay}"
-        >
-            <TextBlock Text="{x:Bind ViewModel.Post.Post.Embed.Type, Mode=OneWay}" />
-        </Grid>
-
-        <Grid
-            Grid.Row="5"
-            Grid.Column="1"
-        >
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width=".25*" />
-                <ColumnDefinition Width=".25*" />
-                <ColumnDefinition Width=".25*" />
-                <ColumnDefinition Width=".25*" />
-            </Grid.ColumnDefinitions>
-
-            <StackPanel
-                Grid.Column="0"
-                Orientation="Horizontal"
-                Spacing="4"
-            >
-                <AppBarButton
-                    LabelPosition="Collapsed"
-                    Width="32"
-                    Height="40"
-                    VerticalAlignment="Center"
-                    IsCompact="True"
-                    Padding="0"
-                >
-                    <AppBarButton.Icon>
-                        <FontIcon
-                            Glyph="&#xE97A;"
-                            Margin="0,-2,0,2"
-                            FontSize="8"
-                        />
-                    </AppBarButton.Icon>
-                </AppBarButton>
-
-                <TextBlock
-                    VerticalAlignment="Center"
-                    Visibility="{x:Bind ViewModel.HasReplies, Mode=OneWay}"
-                >
-                    <Hyperlink
-                        ui:HyperlinkExtensions.Command="{x:Bind ViewModel.FetchRepliesCommand}"
-                    >
-                        <Run Text="{x:Bind ViewModel.Post.Post.ReplyCount, Mode=OneWay}" />
-                    </Hyperlink>
-                </TextBlock>
-            </StackPanel>
-
-            <StackPanel
-                Grid.Column="1"
-                Orientation="Horizontal"
-                Spacing="2"
-            >
-                <AppBarButton
-                    LabelPosition="Collapsed"
-                    Width="32"
-                    Height="40"
-                    VerticalAlignment="Center"
-                    IsCompact="True"
-                    Padding="0"
-                >
-                    <AppBarButton.Icon>
-                        <FontIcon
-                            Glyph="&#xE9B1;"
-                            FontSize="8"
-                            Margin="0"
-                        />
-                    </AppBarButton.Icon>
-                </AppBarButton>
-
-                <TextBlock
-                    VerticalAlignment="Center"
-                    Visibility="{x:Bind ViewModel.HasReposts, Mode=OneWay}"
-                >
-                    <Hyperlink>
-                        <Run Text="{x:Bind ViewModel.Post.Post.RepostCount, Mode=OneWay}" />
-                    </Hyperlink>
-                </TextBlock>
-            </StackPanel>
-
-            <StackPanel
-                Grid.Column="2"
-                Orientation="Horizontal"
-                Spacing="2"
-            >
-                <AppBarButton
-                    LabelPosition="Collapsed"
-                    Width="32"
-                    Height="40"
-                    VerticalAlignment="Center"
-                    IsCompact="True"
-                    Padding="0"
-                >
-                    <AppBarButton.Icon>
-                        <FontIcon
-                            Glyph="&#xE8E1;"
-                            FontSize="8"
-                            Margin="0,-2,0,2"
-                        />
-                    </AppBarButton.Icon>
-                </AppBarButton>
-
-                <TextBlock
-                    VerticalAlignment="Center"
-                    Visibility="{x:Bind ViewModel.HasLikes, Mode=OneWay}"
-                >
-                    <Hyperlink>
-                        <Run Text="{x:Bind ViewModel.Post.Post.LikeCount, Mode=OneWay}" />
-                    </Hyperlink>
-                </TextBlock>
-            </StackPanel>
-
-            <StackPanel
-                Grid.Column="3"
-                Orientation="Horizontal"
-                Spacing="4"
-            >
-                <AppBarButton
-                    LabelPosition="Collapsed"
-                    Width="32"
-                    Height="40"
-                    VerticalAlignment="Center"
-                    IsCompact="True"
-                    Padding="0"
-                >
-                    <AppBarButton.Icon>
-                        <FontIcon 
-                            Glyph="&#xE712;"
-                            FontSize="8"
-                            Margin="0,-2,0,2"
-                        />
-                    </AppBarButton.Icon>
-                </AppBarButton>
-
-            </StackPanel>
-        </Grid>
-
-        <ItemsView
-            Grid.Row="6"
             Grid.Column="0"
             Grid.ColumnSpan="2"
-            ItemsSource="{x:Bind ViewModel.Replies}"
+            x:Name="ParentReplyContainer"
+            Visibility="{x:Bind ViewModel.ShowParentReply, Mode=OneWay}"
+        />
+
+        <Grid 
+            Grid.Row="3"
+            Grid.Column="0"
+            Grid.ColumnSpan="2"
+            Padding="8,8,8,0"
+            ColumnSpacing="12" 
+            HorizontalAlignment="Stretch"
         >
-            <ItemsView.ItemTemplate>
-                <DataTemplate x:DataType="ffm:FeedViewPost">
-                    <ItemContainer>
-                        <v:PostControl
-                            Connection="{Binding ViewModel.Connection, ElementName=Self}"
-                            Post="{x:Bind (ffm:FeedViewPost)}"
-                            DisplayProfileCommand="{Binding ViewModel.RequestDisplayProfileWithProfileCommand, ElementName=Self}"
-                            DisplayPostCommand="{Binding ViewModel.RequestDisplayPostCommand, ElementName=Self}"
-                            DisplayUserListCommand="{Binding ViewModel.RequestDisplayUserListCommand, ElementName=Self}"
-                            LinksCommand="{Binding ViewModel.LinksCommand, ElementName=Self}"
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" /> <!-- Col=0; pic -->
+                <ColumnDefinition x:Name="PostColumn" Width="*" /> <!-- Col=1; text -->
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+
+            <Grid
+                Grid.Row="0"
+                Grid.Column="0"
+                Grid.ColumnSpan="2"
+                Visibility="{x:Bind ViewModel.IsRepost, Mode=OneWay}"
+                ColumnSpacing="4"
+                Margin="0,0,0,4"
+            >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    TextTrimming="CharacterEllipsis"
+                    MaxLines="1"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                >
+                    <Run Text="&#xE8EE;" FontFamily="Segoe Fluent Icons" FontSize="8" />
+                    <Run Text="Reposted by" />
+                    <Hyperlink
+                        ui:HyperlinkExtensions.Command="{x:Bind ViewModel.RequestDisplayProfileCommand}"
+                        ui:HyperlinkExtensions.CommandParameter="{x:Bind ViewModel.Post.Reason.By.Did, Mode=OneWay}"
+                    >
+                        <Run
+                            Text="{x:Bind ViewModel.Post.Reason.By.DisplayName, Mode=OneWay}"
                         />
-                    </ItemContainer>
-                </DataTemplate>
-            </ItemsView.ItemTemplate>
-        </ItemsView>
+                    </Hyperlink>
+                </TextBlock>
+
+                <TextBlock
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                    FontSize="10"
+                    Text="{x:Bind ViewModel.RepostTimeAgo, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.RepostTime, Mode=OneWay}"
+                />
+            </Grid>
+
+            <Grid
+                Grid.Row="1"
+                Grid.Column="0"
+                VerticalAlignment="Stretch"
+                Visibility="{x:Bind ViewModel.ShowBigAvatar, Mode=OneWay}"
+                RowSpacing="8"
+            >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <PersonPicture
+                    Grid.Row="0"
+                    VerticalAlignment="Top"
+                    ProfilePicture="{x:Bind ViewModel.Avatar, Mode=OneWay}"
+                    Height="48"
+                    Width="48"
+                />
+
+                <Border
+                    Grid.Row="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Stretch"
+                    Width="1"
+                    BorderBrush="{StaticResource AccentFillColorDefaultBrush}"
+                    BorderThickness="1,0,0,0"
+                    Visibility="{x:Bind ViewModel.ShowThreadLine, Mode=OneWay}"
+                />
+            </Grid>
+
+
+            <Grid
+                Grid.Row="1"
+                Grid.Column="1"
+                HorizontalAlignment="Stretch"
+            >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" /> <!-- Row=0: pic, name, time -->
+                    <RowDefinition Height="auto" /> <!-- Row=1: pic, reply to -->
+                    <RowDefinition Height="auto" /> <!-- Row=2: pic, text -->
+                    <RowDefinition Height="auto" /> <!-- Row=3: pic, embedded pictures -->
+                    <RowDefinition Height="auto" /> <!-- Row=4: pic, embedded external -->
+                    <RowDefinition Height="auto" /> <!-- Row=5: pic, embedded video -->
+                    <RowDefinition Height="auto" /> <!-- Row=6: pic, embedded quote -->
+                    <RowDefinition Height="auto" /> <!-- Row=7: pic, stats, actions -->
+                </Grid.RowDefinitions>
+
+                <Grid
+                    Grid.Row="0"
+                    Margin="0,0,0,4"
+                    HorizontalAlignment="Stretch"
+                >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <PersonPicture
+                        Grid.Column="0"
+                        ProfilePicture="{x:Bind ViewModel.Avatar, Mode=OneWay}"
+                        VerticalAlignment="Center"
+                        Height="16"
+                        Width="16"
+                        Margin="0,4,8,0"
+                        Visibility="{x:Bind ViewModel.IsQuote, Mode=OneWay}"
+                    />
+
+                    <TextBlock
+                        Grid.Column="1"
+                        TextTrimming="CharacterEllipsis"
+                        MaxLines="1"
+                        VerticalAlignment="Center"
+                    >
+                        <Hyperlink
+                            ui:HyperlinkExtensions.Command="{x:Bind ViewModel.RequestDisplayProfileCommand}"
+                            ui:HyperlinkExtensions.CommandParameter="{x:Bind ViewModel.Post.Post.Author.Did, Mode=OneWay}"
+                        >
+                            <Run
+                                Text="{x:Bind ViewModel.Post.Post.Author.DisplayName, Mode=OneWay}"
+                                FontWeight="Bold"
+                            />
+                        </Hyperlink>
+
+                        <Run
+                            Text="{x:Bind ViewModel.Handle, Mode=OneWay}"
+                            Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                        />
+                    </TextBlock>
+
+                    <TextBlock
+                        Grid.Column="2"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                        ToolTipService.ToolTip="{x:Bind ViewModel.PostTime, Mode=OneWay}"
+                        Margin="8,0,0,0"
+                        Text="{x:Bind ViewModel.TimeAgo, Mode=OneWay}"
+                    />
+                </Grid>
+
+                <Grid
+                    Grid.Row="1"
+                    HorizontalAlignment="Stretch"
+                    Margin="0,0,0,4"
+                    Visibility="{x:Bind ViewModel.ShowReplyTo, Mode=OneWay}"
+                >
+                    <TextBlock
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                    >
+                        <Run Text="&#xE97A;" FontFamily="Segoe Fluent Icons" FontSize="8" />
+                        <Run Text="In reply to" />
+                        <Run Text="{x:Bind ViewModel.Post.Reply.Parent.Author.DisplayName, Mode=OneWay}"/>
+                    </TextBlock>
+                </Grid>
+
+                <RichTextBlock
+                    Grid.Row="2"
+                    IsTextSelectionEnabled="True"
+                    TextWrapping="WrapWholeWords"
+                    VerticalAlignment="Top"
+                    Margin="0,0,0,4"
+                    HorizontalAlignment="Stretch"
+                    h:RichTextExtensions.Text="{x:Bind ViewModel.Post.Post.Record.Text, Mode=OneWay}"
+                    h:RichTextExtensions.Facets="{x:Bind ViewModel.Post.Post.Record.Facets, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.ContainsText, Mode=OneWay}"
+                >
+                    <i:Interaction.Behaviors>
+                        <b:HyperlinkClickBehavior
+                            LinksCommand="{x:Bind ViewModel.LinksCommand, Mode=OneWay}"
+                        />
+                    </i:Interaction.Behaviors>
+                </RichTextBlock>
+
+                <GridView
+                    x:Name="PicturesView"
+                    Grid.Row="3"
+                    Margin="0,0,0,4"
+                    HorizontalAlignment="Stretch"
+                    Padding="0"
+                    Visibility="{x:Bind ViewModel.HasEmbeddedPictures, Mode=OneWay}"
+                    SelectionMode="None"
+                    IsItemClickEnabled="False"
+                >
+                    <GridView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Grid
+                                RowSpacing="2"
+                                ColumnSpacing="2"
+                                MaxHeight="{Binding GridMaxHeight, ElementName=Self}"
+                                Loaded="ResizeGrid"
+                            >
+                                <Grid.RowDefinitions>
+                                    <RowDefinition
+                                        Height="{Binding GridRowHeight, ElementName=Self}"
+                                        MaxHeight="{Binding GridRowMaxHeight, ElementName=Self}"
+                                    />
+                                    <RowDefinition
+                                        Height="{Binding GridRowHeight, ElementName=Self}"
+                                        MaxHeight="{Binding GridRowMaxHeight, ElementName=Self}"
+                                    />
+                                </Grid.RowDefinitions>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width=".5*" />
+                                    <ColumnDefinition Width=".5*" />
+                                </Grid.ColumnDefinitions>
+                            </Grid>
+                        </ItemsPanelTemplate>
+                    </GridView.ItemsPanel>
+                </GridView>
+
+                <Grid
+                    Grid.Row="4"
+                    Margin="0,0,0,4"
+                    HorizontalAlignment="Stretch"
+                    Padding="0"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{StaticResource CardStrokeColorDefaultBrush}"
+                    Visibility="{x:Bind ViewModel.HasExternalEmbed, Mode=OneWay}"
+                >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+
+                    <Image
+                        Grid.Row="0"
+                        Grid.RowSpan="2"
+                        Stretch="UniformToFill"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Source="{x:Bind ViewModel.ExternalEmbed.Thumb, Mode=OneWay}"
+                    />
+
+                    <StackPanel
+                        Grid.Row="1"
+                        Padding="8"
+                        Background="{StaticResource ControlOnImageFillColorDefaultBrush}"
+                    >
+                        <TextBlock
+                            TextTrimming="CharacterEllipsis"
+                            MaxLines="1"
+                            Margin="0,0,0,4"
+                        >
+                            <Hyperlink
+                                UnderlineStyle="None"
+                                FontWeight="Semibold"
+                                NavigateUri="{x:Bind ViewModel.ExternalEmbed.Uri, Mode=OneWay}"
+                            >
+                                <Run Text="{x:Bind ViewModel.ExternalEmbed.Title, Mode=OneWay}" />
+                            </Hyperlink>
+                        </TextBlock>
+
+                        <TextBlock
+                            TextTrimming="CharacterEllipsis"
+                            MaxLines="3"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                        >
+                            <Run Text="{x:Bind ViewModel.ExternalEmbed.Description, Mode=OneWay}" />
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
+
+                <Grid
+                    Grid.Row="5"
+                    Visibility="{x:Bind ViewModel.HasEmbeddedVideo, Mode=OneWay}"
+                    Margin="0,0,0,4"
+                    HorizontalAlignment="Stretch"
+                    Padding="0"
+                    Loaded="LoadEmbeddedVideo"
+                    CornerRadius="8"
+                >
+                    <MediaPlayerElement
+                        HorizontalAlignment="Stretch"
+                        x:Name="MediaPlayer"
+                        Source="{x:Bind ViewModel.EmbeddedVideo.Source, Mode=OneWay}"
+                        CornerRadius="8"
+                        Stretch="Uniform"
+                        AreTransportControlsEnabled="True"
+                        AutoPlay="False"
+                    />
+                </Grid>
+
+                <Grid
+                    x:Name="QuoteContainer"
+                    Grid.Row="6"
+                    Padding="-4,4,4,8"
+                    Margin="0,0,0,4"
+                    HorizontalAlignment="Stretch"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{StaticResource CardStrokeColorDefaultBrush}"
+                    Visibility="{x:Bind ViewModel.HasEmbeddedQuote, Mode=OneWay}"
+                />
+
+
+                <Grid
+                    Grid.Row="7"
+                    Margin="0,0,0,4"
+                    HorizontalAlignment="Stretch"
+                    Visibility="{x:Bind ViewModel.ShowInteractionButtons, Mode=OneWay}"
+                >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width=".25*" />
+                        <ColumnDefinition Width=".25*" />
+                        <ColumnDefinition Width=".25*" />
+                        <ColumnDefinition Width=".25*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel
+                        Grid.Column="0"
+                        Orientation="Horizontal"
+                        Spacing="4"
+                    >
+                        <AppBarButton
+                            LabelPosition="Collapsed"
+                            Width="32"
+                            Height="40"
+                            VerticalAlignment="Center"
+                            IsCompact="True"
+                            Padding="0"
+                        >
+                            <AppBarButton.Icon>
+                                <FontIcon
+                                    Glyph="&#xE90A;"
+                                    Margin="0,-2,0,2"
+                                    FontSize="8"
+                                />
+                            </AppBarButton.Icon>
+                        </AppBarButton>
+
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Visibility="{x:Bind ViewModel.HasReplies, Mode=OneWay}"
+                            Margin="0,-1,0,0"
+                        >
+                            <Hyperlink
+                                UnderlineStyle="None"
+                                FontWeight="Semibold"
+                            >
+                                <Run Text="{x:Bind ViewModel.Post.Post.ReplyCount, Mode=OneWay}" />
+                            </Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel
+                        Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="2"
+                    >
+                        <AppBarButton
+                            LabelPosition="Collapsed"
+                            Width="32"
+                            Height="40"
+                            VerticalAlignment="Center"
+                            IsCompact="True"
+                            Padding="0"
+                        >
+                            <AppBarButton.Icon>
+                                <FontIcon
+                                    Glyph="&#xE8EE;"
+                                    FontSize="8"
+                                    Margin="0,-2,0,2"
+                                    Foreground="{x:Bind ViewModel.RepostColor, Mode=OneWay}"
+                                />
+                            </AppBarButton.Icon>
+                        </AppBarButton>
+
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Visibility="{x:Bind ViewModel.HasReposts, Mode=OneWay}"
+                            Margin="0,-1,0,0"
+                        >
+                            <Hyperlink
+                                UnderlineStyle="None"
+                                FontWeight="Semibold"
+                            >
+                                <Run Text="{x:Bind ViewModel.Post.Post.RepostCount, Mode=OneWay}" />
+                            </Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel
+                        Grid.Column="2"
+                        Orientation="Horizontal"
+                        Spacing="2"
+                    >
+                        <AppBarButton
+                            LabelPosition="Collapsed"
+                            Width="32"
+                            Height="40"
+                            VerticalAlignment="Center"
+                            IsCompact="True"
+                            Padding="0"
+                        >
+                            <AppBarButton.Icon>
+                                <FontIcon
+                                    Glyph="{x:Bind ViewModel.LikeGlyph, Mode=OneWay}"
+                                    FontSize="8"
+                                    Margin="0,-2,0,2"
+                                    Foreground="{x:Bind ViewModel.LikeColor, Mode=OneWay}"
+                                />
+                            </AppBarButton.Icon>
+                        </AppBarButton>
+
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Visibility="{x:Bind ViewModel.HasLikes, Mode=OneWay}"
+                            Margin="0,-1,0,0"
+                        >
+                            <Hyperlink
+                                UnderlineStyle="None"
+                                FontWeight="Semibold"
+                            >
+                                <Run Text="{x:Bind ViewModel.Post.Post.LikeCount, Mode=OneWay}" />
+                            </Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel
+                        Grid.Column="3"
+                        Orientation="Horizontal"
+                        Spacing="4"
+                    >
+                        <AppBarButton
+                            LabelPosition="Collapsed"
+                            Width="32"
+                            Height="40"
+                            VerticalAlignment="Center"
+                            IsCompact="True"
+                            Padding="0"
+                        >
+                            <AppBarButton.Icon>
+                                <FontIcon 
+                                    Glyph="&#xE712;"
+                                    FontSize="8"
+                                    Margin="0,-2,0,2"
+                                />
+                            </AppBarButton.Icon>
+                        </AppBarButton>
+
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
     </Grid>
 </UserControl>

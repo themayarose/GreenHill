@@ -16,6 +16,8 @@ public partial class MainWindowViewModel(IConnectionService conn, ICredentialSer
 
     [ObservableProperty] private string userQuery = string.Empty;
 
+    [ObservableProperty] private PageRequest? startOfTimelineRequest;
+
     [NotifyPropertyChangedFor(nameof(InputFacets))]
     [ObservableProperty]
     private string input = string.Empty;
@@ -95,6 +97,10 @@ public partial class MainWindowViewModel(IConnectionService conn, ICredentialSer
         }
 
         CurrentProfile = await Connection.GetProfileAsync(Connection.Session.Did);
+
+        StartOfTimelineRequest = new PageRequest.TimelinePage() {
+            Cursor = string.Empty
+        };
 
         // await ShowIdolsAsync();
     }
