@@ -1,7 +1,12 @@
+using System.ComponentModel;
 using FishyFlip.Models;
 using GreenHill.Helpers;
 using GreenHill.Services;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Windows.Media.Playback;
+
+using Image = Microsoft.UI.Xaml.Controls.Image;
 
 namespace GreenHill.Views;
 
@@ -9,19 +14,62 @@ namespace GreenHill.Views;
 public partial class PostControl : UserControl, IBaseView<PostViewModel> {
     public PostViewModel ViewModel { get; } = App.GetService<PostViewModel>();
 
-    public PostControl() => InitializeComponent();
-
     [ObservableProperty] private GridLength gridRowHeight = new (.5, GridUnitType.Star);
     [ObservableProperty] private double gridMaxHeight = double.PositiveInfinity;
     [ObservableProperty] private double gridRowMaxHeight = double.PositiveInfinity;
 
+    public DispatcherTimer UpdateTimer { get; } = new () {
+        Interval = TimeSpan.FromSeconds(30)
+    };
+
+    public PostControl() {
+        InitializeComponent();
+
+        UpdateTimer.Tick += UpdatePost;
+
+        ViewModel.PropertyChanged += VMPropertyChanged;
+    }
+
+    public void VMPropertyChanged(object? _, PropertyChangedEventArgs args) {
+        if (args.PropertyName == nameof(ViewModel.HasEmbeddedPictures) && ViewModel.HasEmbeddedPictures) {
+            LoadEmbeddedPictures();
+            ResizeGrid(null, new ());
+        }
+        else if (args.PropertyName == nameof(ViewModel.HasEmbeddedQuote) && ViewModel.HasEmbeddedQuote) {
+            LoadEmbeddedQuote();
+        }
+        else if (args.PropertyName == nameof(ViewModel.HasEmbeddedVideo) && ViewModel.HasEmbeddedVideo) {
+            LoadEmbeddedVideo(null, new ());
+        }
+        else if (args.PropertyName == nameof(ViewModel.Post) && ViewModel.Post is not null) {
+            LoadOriginalPost();
+            LoadMostRecentParent();
+
+            if (ViewModel.IsRepost && ViewModel.Post!.Reply is not null) {
+                ShowReplyTo = true;
+            }
+        }
+    }
+
+    public async void UpdatePost(object? _, object? __) {
+        if (MediaPlayer.MediaPlayer.PlaybackSession.PlaybackState is MediaPlaybackState.Playing) return;
+
+        await ViewModel.UpdatePostCommand.ExecuteAsync(null);
+    }
+
+    public void StartTimer(object? _, RoutedEventArgs __) {
+        UpdateTimer.Start();
+    }
+
     public void LoadEmbeddedVideo(object? _, RoutedEventArgs __) {
+        if (!MediaPlayer.IsLoaded) return;
         if (!ViewModel.HasEmbeddedVideo) return;
         if (ViewModel.EmbeddedVideo?.AspectRatio is not AspectRatio ratio) return;
 
         var height = PostColumn.ActualWidth / ratio.Width * ratio.Height;
 
         MediaPlayer.Height = height;
+        MediaPlayer.MaxHeight = 2 * PostColumn.ActualWidth;
     }
 
     public void LoadEmbeddedPictures() {
@@ -54,7 +102,7 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
 
         if (!ViewModel.ShowParentReply || ViewModel.IsRepost || ViewModel.IsQuote) return;
 
-        PostControl post = new () { ShowThreadLine = true, ShowReplyTo = ViewModel.ShowThreadExtensions };
+        PostControl post = new () { ShowThreadLine = true };
 
         post.MakeBinding(ViewModel, ConnectionProperty, nameof(ViewModel.Connection));
         post.MakeBinding(ViewModel, LinksCommandProperty, nameof(ViewModel.LinksCommand));
@@ -83,15 +131,22 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
         QuoteContainer.Children.Add(post);
     }
 
-    public void ResizeGrid(object _, RoutedEventArgs __) {
+    public void ResizeGrid(object? _, RoutedEventArgs __) {
+        if (!PicturesView.IsLoaded) return;
+
         var width = PostColumn.ActualWidth;
         var count = ViewModel.EmbeddedPictures.Count;
 
         if (count == 1) {
-            GridMaxHeight = 2 * width;
+            GridMaxHeight = (2 * width) + 2;
             GridRowMaxHeight = width;
         }
         else {
+            GridMaxHeight = count switch {
+                2 or 3 => (width / 2) + 2,
+                _ => (2 * width / 3) + 2,
+            };
+
             GridRowHeight = count switch {
                 2 => new (width / 2, GridUnitType.Pixel),
                 3 => new (width / 4, GridUnitType.Pixel),
@@ -102,7 +157,7 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
 
             foreach (var (i, elem) in PicturesView.Items.WithIndex()) {
                 if (elem is not GridViewItem item) continue;
-                if (item.Content is not Microsoft.UI.Xaml.Controls.Image image) continue;
+                if (item.Content is not Image image) continue;
 
                 var height = i == 0 && count == 3 ?
                     2 * (GridRowMaxHeight + 4) :
@@ -117,12 +172,28 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
     }
 
     private GridViewItem BuildImageItem(EmbeddedPicture picture) {
-        var image = new Microsoft.UI.Xaml.Controls.Image() {
+        var image = new Image() {
             Stretch = Microsoft.UI.Xaml.Media.Stretch.UniformToFill,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
             Source = picture.Thumb,
         };
+
+        if (ViewModel.EmbeddedPictures.Count == 1) {
+            if (picture.Thumb is BitmapImage bmp) {
+                bmp.ImageOpened += (s, a) => {
+                    var width = PostColumn.ActualWidth;
+
+                    GridRowHeight = new (
+                        Math.Min(
+                            width / 2,
+                            (bmp.PixelHeight / bmp.PixelWidth) * (width / 2)
+                        ),
+                        GridUnitType.Pixel
+                    );
+                };
+            }
+        }
 
         if (picture.View?.Alt is not null && picture.View.Alt != string.Empty) {
             image.SetValue(ToolTipService.ToolTipProperty, picture.View.Alt);
@@ -130,7 +201,8 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
 
         var item = new GridViewItem {
             Content = image,
-            CornerRadius = new (8)
+            CornerRadius = new (8),
+            VerticalAlignment = VerticalAlignment.Top
         };
 
         item.SetValue(Grid.RowProperty, picture.Row);
@@ -166,15 +238,6 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
                 if (s is not PostControl self) return;
 
                 self.ViewModel.Post = (FeedViewPost?) a.NewValue;
-
-                self.LoadEmbeddedPictures();
-                self.LoadEmbeddedQuote();
-                self.LoadOriginalPost();
-                self.LoadMostRecentParent();
-
-                if ((self.ViewModel.IsQuote || self.ViewModel.IsRepost) && self.ViewModel.Post?.Reply is not null) {
-                    self.ShowReplyTo = true;
-                }
             })
         );
 

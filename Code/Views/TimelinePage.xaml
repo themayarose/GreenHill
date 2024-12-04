@@ -12,21 +12,25 @@
     xmlns:ui="using:CommunityToolkit.WinUI"
     mc:Ignorable="d"
     x:Name="Self"
+    NavigationCacheMode="Required"
 >
-    <ItemsView
-        ItemsSource="{x:Bind ViewModel.Posts}"
+    <RefreshContainer
+        RefreshRequested="RefreshTimeline"
     >
-        <ItemsView.ItemTemplate>
-            <DataTemplate x:DataType="ffm:FeedViewPost">
-                <ItemContainer>
+        <ListView
+            ItemsSource="{x:Bind ViewModel.Posts}"
+            SelectionMode="None"
+        >
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="ffm:FeedViewPost">
                     <v:PostControl
                         Connection="{Binding ViewModel.Connection, ElementName=Self}"
                         Post="{x:Bind (ffm:FeedViewPost)}"
                         DisplayProfileCommand="{Binding ViewModel.Parent.DisplayProfileCommand, ElementName=Self}"
                         LinksCommand="{Binding ViewModel.Parent.HyperlinkClickedCommand, ElementName=Self}"
                     />
-                </ItemContainer>
-            </DataTemplate>
-        </ItemsView.ItemTemplate>
-    </ItemsView>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </RefreshContainer>
 </v:TimelineBasePage>

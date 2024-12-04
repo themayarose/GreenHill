@@ -135,8 +135,8 @@ public class SkyConnection {
         return thread;
     }
 
-    public async Task<Timeline> GetTimelineAsync(string? cursor = null) {
-        var (timeline, err) = await Protocol.Feed.GetTimelineAsync(cursor: cursor);
+    public async Task<Timeline> GetTimelineAsync(string? cursor = null, int limit = 50) {
+        var (timeline, err) = await Protocol.Feed.GetTimelineAsync(cursor: cursor, limit: limit);
 
         if (timeline is null) {
             throw new InvalidDataException(err?.Detail?.Message ?? string.Empty);
