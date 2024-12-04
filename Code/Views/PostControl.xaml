@@ -322,7 +322,6 @@
                                 RowSpacing="2"
                                 ColumnSpacing="2"
                                 MaxHeight="{Binding GridMaxHeight, ElementName=Self}"
-                                Loaded="ResizeGrid"
                             >
                                 <Grid.RowDefinitions>
                                     <RowDefinition

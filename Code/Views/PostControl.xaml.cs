@@ -33,7 +33,6 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
     public void VMPropertyChanged(object? _, PropertyChangedEventArgs args) {
         if (args.PropertyName == nameof(ViewModel.HasEmbeddedPictures) && ViewModel.HasEmbeddedPictures) {
             LoadEmbeddedPictures();
-            ResizeGrid(null, new ());
         }
         else if (args.PropertyName == nameof(ViewModel.HasEmbeddedQuote) && ViewModel.HasEmbeddedQuote) {
             LoadEmbeddedQuote();
@@ -53,6 +52,10 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
 
     public async void UpdatePost(object? _, object? __) {
         if (MediaPlayer.MediaPlayer.PlaybackSession.PlaybackState is MediaPlaybackState.Playing) return;
+
+        if (ViewModel.HasEmbeddedQuote && QuoteContainer.Children.First() is PostControl innerPost) {
+            if (innerPost.MediaPlayer.MediaPlayer.PlaybackSession.PlaybackState is MediaPlaybackState.Playing) return;
+        }
 
         await ViewModel.UpdatePostCommand.ExecuteAsync(null);
     }
@@ -131,15 +134,39 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
         QuoteContainer.Children.Add(post);
     }
 
-    public void ResizeGrid(object? _, RoutedEventArgs __) {
+    private int ResizesRequested { get; set; } = 0;
+
+    public void ResizeGrid(object sender, RoutedEventArgs __) {
         if (!PicturesView.IsLoaded) return;
+        if (sender is not BitmapImage bmp) return;
+
+        var count = ViewModel.EmbeddedPictures.Count;
+
+        ResizesRequested += 1;
+
+        if (ResizesRequested < count) return;
+        else ResizesRequested = 0;
 
         var width = PostColumn.ActualWidth;
-        var count = ViewModel.EmbeddedPictures.Count;
 
         if (count == 1) {
             GridMaxHeight = (2 * width) + 2;
             GridRowMaxHeight = width;
+
+            if (PicturesView.Items.First() is GridViewItem item && item.Content is Image image) {
+                var height = Math.Min(
+                    2 * width,
+                    ((double) bmp.PixelHeight / (double) bmp.PixelWidth) * width
+                );
+
+                var rowHeight = (height - 2) / 2;
+
+                GridRowHeight = new (rowHeight, GridUnitType.Pixel);
+
+                image.Height = height;
+                image.MaxHeight = height;
+            }
+
         }
         else {
             GridMaxHeight = count switch {
@@ -179,20 +206,8 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
             Source = picture.Thumb,
         };
 
-        if (ViewModel.EmbeddedPictures.Count == 1) {
-            if (picture.Thumb is BitmapImage bmp) {
-                bmp.ImageOpened += (s, a) => {
-                    var width = PostColumn.ActualWidth;
-
-                    GridRowHeight = new (
-                        Math.Min(
-                            width / 2,
-                            (bmp.PixelHeight / bmp.PixelWidth) * (width / 2)
-                        ),
-                        GridUnitType.Pixel
-                    );
-                };
-            }
+        if (picture.Thumb is BitmapImage bmp) {
+            bmp.ImageOpened += ResizeGrid;
         }
 
         if (picture.View?.Alt is not null && picture.View.Alt != string.Empty) {
