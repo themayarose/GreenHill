@@ -1,7 +1,6 @@
 using System.Runtime.InteropServices;
 
 using Microsoft.UI;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 
 using Windows.UI;

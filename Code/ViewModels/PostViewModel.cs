@@ -7,10 +7,6 @@ using Humanizer;
 using Windows.Media.Playback;
 using Windows.Media.Core;
 using Ipfs;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Newtonsoft.Json;
-using System.Diagnostics.CodeAnalysis;
 
 namespace GreenHill.ViewModels;
 

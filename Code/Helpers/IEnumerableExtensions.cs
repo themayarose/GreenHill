@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using Microsoft.Xaml.Interactivity;
-
 namespace GreenHill.Helpers;
 
 public static class IEnumerableExtensions {

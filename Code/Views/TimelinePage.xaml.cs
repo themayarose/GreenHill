@@ -1,4 +1,3 @@
-using System.Runtime.Serialization;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Foundation;

@@ -1,16 +1,9 @@
-using System.ComponentModel;
 using Microsoft.UI.Xaml.Controls;
 using FishyFlip.Models;
 using Microsoft.UI.Xaml.Documents;
-
-using Block = Microsoft.UI.Xaml.Documents.Block;
-using Microsoft.UI.Composition;
-using GreenHill.Services;
 using System.Text.RegularExpressions;
 using System.Text;
 using urldetector.detection;
-using Windows.Devices.Perception;
-using Microsoft.Xaml.Interactivity;
 using CommunityToolkit.WinUI;
 
 namespace GreenHill.Helpers;
@@ -210,9 +203,6 @@ public static partial class RichTextExtensions {
             var end = Encoding.UTF8.GetString(
                 textBytes[..(facet.Index.ByteEnd - offset)]
             ).Length;
-
-            // var end = Encoding.UTF8.GetBytes(text)[..facet.Index.ByteEnd].Length - offset;
-            // var prevEnd = (prev?.Index?.ByteEnd ?? offset) - offset;
 
             var prevEnd = Encoding.UTF8.GetString(
                 textBytes[..((prev?.Index?.ByteEnd ?? offset) - offset)]

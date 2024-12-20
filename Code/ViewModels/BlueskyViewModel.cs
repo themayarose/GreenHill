@@ -1,6 +1,5 @@
 using FishyFlip.Models;
 using GreenHill.Helpers;
-using Microsoft.UI.Xaml.Controls;
 
 namespace GreenHill.ViewModels;
 
