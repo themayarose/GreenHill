@@ -4,18 +4,13 @@ using GreenHill.Services;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml.Input;
-using Windows.Devices.Sms;
 using GreenHill.Helpers;
-using FishyFlip.Models;
 
 namespace GreenHill.Views;
 
-[INotifyPropertyChanged]
 public sealed partial class MainWindow : Window, IBaseView<MainWindowViewModel> {
     public MainWindowViewModel ViewModel { get; } =
         App.GetService<MainWindowViewModel>();
-
-    [ObservableProperty] private bool isActive = false;
 
     private SpringVector3NaturalMotionAnimation? PersonPictureAnimation { get; set; }
 
@@ -33,7 +28,23 @@ public sealed partial class MainWindow : Window, IBaseView<MainWindowViewModel> 
             root.Loaded += ContentLoaded;
         }
 
+        TitleBar.Loaded += FixDragArea;
+        TitleBar.SizeChanged += FixDragArea;
+        SearchBox.SizeChanged += FixDragArea;
+        LoginArea.SizeChanged += FixDragArea;
+
+        NavView.DisplayModeChanged += (s, a) => {
+            TitleBar.Margin = TitleBar.Margin with {
+                Left = s.CompactPaneLength * (
+                    s.DisplayMode == NavigationViewDisplayMode.Minimal ? 2 : 1
+                )
+            };
+        };
+
     }
+
+    private void FixDragArea(object sender, RoutedEventArgs args) =>
+        App.MainWindow.SetDragRectangles(TitleBar, SearchBox, LoginArea);
 
     private double SearchBoxWidthRatio { get; } = 0.4;
     private double NavBarWidthRatio { get; } = 0.225;
@@ -41,9 +52,11 @@ public sealed partial class MainWindow : Window, IBaseView<MainWindowViewModel> 
     public async void ContentLoaded(object s, RoutedEventArgs args) {
         if (s is not FrameworkElement root) return;
 
+        TitleBarHelper.UpdateTitleBar(root.RequestedTheme);
+
         ViewModel.SearchBox = SearchBox;
 
-        var compositor = (App.Current as App)?.MainWindow?.Compositor;
+        var compositor = App.MainWindow.Compositor;
 
         if (compositor is not null) {
             PersonPictureAnimation = compositor.CreateSpringVector3Animation();
@@ -144,22 +157,12 @@ public sealed partial class MainWindow : Window, IBaseView<MainWindowViewModel> 
         });
     }
 
-    public void TitleBarPaneToggleRequested(TitleBar _, object? __) {
-        NavView.IsPaneOpen = !NavView.IsPaneOpen;
-
-    }
-
     private void ActivationStateChanged(object sender, WindowActivatedEventArgs args) {
-        if (args.WindowActivationState == WindowActivationState.Deactivated) {
-            IsActive = false;
-        }
-        else {
-            IsActive = true;
-        }
+        ViewModel.IsActive = args.WindowActivationState != WindowActivationState.Deactivated;
     }
 
     private void ProfileFlyoutClosing(object _, FlyoutBaseClosingEventArgs args) {
-        args.Cancel = !(App.Current as App)?.MainWindow?.IsActive ?? true;
+        args.Cancel = !ViewModel.IsActive;
     }
 
     private void ProfileFlyoutClosed(object sender, object _) {

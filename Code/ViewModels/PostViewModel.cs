@@ -1,10 +1,16 @@
 using FishyFlip.Models;
+using FishyFlip.Tools;
 using GreenHill.Helpers;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Humanizer;
 using Windows.Media.Playback;
 using Windows.Media.Core;
+using Ipfs;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using System.Diagnostics.CodeAnalysis;
 
 namespace GreenHill.ViewModels;
 
@@ -32,7 +38,11 @@ public record EmbeddedVideo {
 }
 
 public partial class PostViewModel : BaseViewModel {
-    [ObservableProperty] private SkyConnection? connection;
+    [ObservableProperty] public partial SkyConnection? Connection { get; set; }
+
+    [ObservableProperty] public partial GridLength GridRowHeight { get; set; } = new (.5, GridUnitType.Star);
+    [ObservableProperty] public partial double GridMaxHeight { get; set; } = double.PositiveInfinity;
+    [ObservableProperty] public partial double GridRowMaxHeight { get; set; } = double.PositiveInfinity;
 
     [NotifyPropertyChangedFor(nameof(Handle))]
     [NotifyPropertyChangedFor(nameof(Avatar))]
@@ -43,9 +53,6 @@ public partial class PostViewModel : BaseViewModel {
     [NotifyPropertyChangedFor(nameof(ShowThreadExtensions))]
     [NotifyPropertyChangedFor(nameof(ShowParentReply))]
     [NotifyPropertyChangedFor(nameof(ContainsText))]
-    [NotifyPropertyChangedFor(nameof(HasReplies))]
-    [NotifyPropertyChangedFor(nameof(HasReposts))]
-    [NotifyPropertyChangedFor(nameof(HasLikes))]
     [NotifyPropertyChangedFor(nameof(TimeAgo))]
     [NotifyPropertyChangedFor(nameof(PostTime))]
     [NotifyPropertyChangedFor(nameof(RepostTimeAgo))]
@@ -58,13 +65,12 @@ public partial class PostViewModel : BaseViewModel {
     [NotifyPropertyChangedFor(nameof(ExternalEmbed))]
     [NotifyPropertyChangedFor(nameof(HasEmbeddedVideo))]
     [NotifyPropertyChangedFor(nameof(EmbeddedVideo))]
-    [NotifyPropertyChangedFor(nameof(LikedByViewer))]
-    [NotifyPropertyChangedFor(nameof(LikeGlyph))]
-    [NotifyPropertyChangedFor(nameof(LikeColor))]
-    [NotifyPropertyChangedFor(nameof(RepostedByViewer))]
-    [NotifyPropertyChangedFor(nameof(RepostColor))]
+    [NotifyPropertyChangedFor(nameof(HasUserLabels))]
+    [NotifyPropertyChangedFor(nameof(UserLabels))]
+    [NotifyPropertyChangedFor(nameof(HasPostLabels))]
+    [NotifyPropertyChangedFor(nameof(PostLabels))]
     [NotifyPropertyChangedRecipients]
-    [ObservableProperty] private FeedViewPost? post;
+    [ObservableProperty] public partial FeedViewPost? Post { get; set; }
 
     public bool IsRepost => Post?.Reason is not null && !IsQuote;
 
@@ -94,30 +100,56 @@ public partial class PostViewModel : BaseViewModel {
 
     public bool ContainsText => (Post?.Post?.Record?.Text?.Trim() ?? string.Empty) != string.Empty;
 
-    public bool HasReplies => (Post?.Post?.ReplyCount ?? 0) > 0;
-    public bool HasReposts => (Post?.Post?.RepostCount ?? 0) > 0;
-    public bool HasLikes => (Post?.Post?.LikeCount ?? 0) > 0;
+    [NotifyPropertyChangedFor(nameof(HasReplies), nameof(ReplyCountText))]
+    [ObservableProperty] public partial int ReplyCount { get; set; }
 
-    public bool LikedByViewer => Post?.Post?.Viewer?.Like is not null;
+    [NotifyPropertyChangedFor(nameof(HasReposts), nameof(RepostCountText))]
+    [ObservableProperty] public partial int RepostCount { get; set; }
+
+    [NotifyPropertyChangedFor(nameof(HasLikes), nameof(LikeCountText))]
+    [ObservableProperty] public partial int LikeCount { get; set; }
+
+    public bool HasReplies => ReplyCount > 0;
+    public bool HasReposts => RepostCount > 0;
+    public bool HasLikes => LikeCount > 0;
+
+    public string LikeCountText => LikeCount.ToMetric(decimals: 1);
+    public string ReplyCountText => ReplyCount.ToMetric(decimals: 1);
+    public string RepostCountText => RepostCount.ToMetric(decimals: 1);
+
+    [NotifyPropertyChangedFor(nameof(LikedByViewer))]
+    [NotifyPropertyChangedFor(nameof(LikeGlyph))]
+    [NotifyPropertyChangedFor(nameof(LikeColor))]
+    [ObservableProperty] public partial ATUri? ViewerLike { get; set; }
+
+    public bool LikedByViewer => ViewerLike is not null;
 
     public string LikeGlyph => LikedByViewer ? "\uEB52" : "\uEB51";
-
-    [ObservableProperty] private IRelayCommand? displayProfileCommand;
-    [ObservableProperty] private IRelayCommand? displayPostCommand;
-    [ObservableProperty] private IRelayCommand? displayUserListCommand;
-    [ObservableProperty] private IRelayCommand? linksCommand;
-
-    [ObservableProperty] private bool showThreadLine = false;
 
     public SolidColorBrush? LikeColor => LikedByViewer ?
         App.Current.Resources["AccentTextFillColorPrimaryBrush"] as SolidColorBrush :
         App.Current.Resources["TextFillColorPrimaryBrush"] as SolidColorBrush ;
 
-    public bool RepostedByViewer => Post?.Post?.Viewer?.Repost is not null;
+    [NotifyPropertyChangedFor(nameof(RepostedByViewer))]
+    [NotifyPropertyChangedFor(nameof(RepostColor))]
+    [NotifyPropertyChangedFor(nameof(RepostMenuText))]
+    [ObservableProperty] public partial ATUri? ViewerRepost { get; set; }
+
+    public bool RepostedByViewer => ViewerRepost is not null;
+
+    public string RepostMenuText => RepostedByViewer ? "Undo repost" : "Repost";
 
     public SolidColorBrush? RepostColor => RepostedByViewer ?
         App.Current.Resources["AccentTextFillColorPrimaryBrush"] as SolidColorBrush :
         App.Current.Resources["TextFillColorPrimaryBrush"] as SolidColorBrush ;
+
+    [ObservableProperty] public partial IRelayCommand? DisplayProfileCommand { get; set; }
+    [ObservableProperty] public partial IRelayCommand? DisplayPostCommand { get; set; }
+    [ObservableProperty] public partial IRelayCommand? DisplayUserListCommand { get; set; }
+    [ObservableProperty] public partial IRelayCommand? DeleteCommand { get; set; }
+    [ObservableProperty] public partial IRelayCommand? LinksCommand { get; set; }
+
+    [ObservableProperty] public partial bool ShowThreadLine { get; set; } = false;
 
     public bool HasEmbeddedPictures => Post?.Post?.Embed is ImageViewEmbed ||
         Post?.Post?.Embed is RecordWithMediaViewEmbed embed && embed.Embed is ImageViewEmbed;
@@ -202,9 +234,23 @@ public partial class PostViewModel : BaseViewModel {
 
     public FeedViewPost? EmbeddedQuote => Post?.Post?.Embed is RecordViewEmbed embed && embed.Post is not null ?
         new (embed.Post, null, null, null) :
-        Post?.Post?.Embed is RecordWithMediaViewEmbed rmEmbed  && rmEmbed.Record is not null ? 
+        Post?.Post?.Embed is RecordWithMediaViewEmbed rmEmbed && rmEmbed.Record is not null ? 
         new (rmEmbed.Record.Post, null, null, null) :
         null;
+
+    public bool HasUserLabels => false; //Post?.Post?.Author?.Labels.Any() ?? false;
+
+    public IEnumerable<string> UserLabels => HasUserLabels ?
+        from label in Post!.Post!.Author!.Labels
+        select label.Val
+    : [];
+
+    public bool HasPostLabels => false; // Post?.Post?.Label?.Any() ?? false;
+
+    public IEnumerable<string> PostLabels => HasPostLabels ?
+        from label in Post!.Post!.Label
+        select label.Val
+    : [];
 
     public bool IsReply => Post?.Reply is not null && !IsQuote;
 
@@ -228,9 +274,9 @@ public partial class PostViewModel : BaseViewModel {
     [NotifyPropertyChangedFor(nameof(ShowInteractionButtons))]
     [NotifyPropertyChangedFor(nameof(ShowBigAvatar))]
     [NotifyPropertyChangedFor(nameof(IsReply))]
-    [ObservableProperty] private bool isQuote = false;
+    [ObservableProperty] public partial bool IsQuote { get; set; } = false;
 
-    [ObservableProperty] private bool showReplyTo = false;
+    [ObservableProperty] public partial bool ShowReplyTo { get; set; } = false;
 
     public bool ShowInteractionButtons => !IsQuote;
 
@@ -284,18 +330,86 @@ public partial class PostViewModel : BaseViewModel {
         if (Connection is null) return;
         if (Post?.Post is null) return;
 
-        PostView? post;
+        OnPropertyChanged(nameof(TimeAgo));
+        OnPropertyChanged(nameof(RepostTimeAgo));
 
         try {
-            post = (await Connection.GetPostsAsync([Post.Post.Uri])).First();
+            var posts = await Connection.GetPostsAsync([Post.Post.Uri]);
 
-            if (post is not null) {
-                try {
-                    Post = Post with { Post = post };
-                }
-                catch (NullReferenceException) {}
+            if (posts is null || !posts.Any()) {
+                if (DeleteCommand is IAsyncRelayCommand cmd) await cmd.ExecuteAsync(Post.Post.Uri);
+                else DeleteCommand?.Execute(Post.Post.Uri);
+            }
+            else {
+                UpdateModifiablesWithPost(posts.First());
             }
         }
-        catch (InvalidOperationException) {}
+        catch {}
+    }
+
+    [RelayCommand]
+    public async Task ToggleLikeAsync() {
+        if (Connection is null) return;
+
+        if (!LikedByViewer) {
+            if (Post?.Post.Cid is not Cid cid) return;
+            if (Post.Post.Uri is not ATUri uri) return;
+
+            var (like, err) = await Connection.Protocol.Repo.CreateLikeAsync(cid, uri);
+
+            if (like is null) {
+                throw new InvalidOperationException(err?.Detail?.Message ?? string.Empty);
+            }
+
+            ViewerLike = like.Uri;
+            LikeCount++;
+        }
+        else {
+            var (success, err) = await Connection.Protocol.Repo.DeleteLikeAsync(ViewerLike!.Rkey);
+
+            if (success is null) {
+                throw new InvalidOperationException(err?.Detail?.Message ?? string.Empty);
+            }
+
+            ViewerLike = null;
+            LikeCount--;
+        }
+    }
+
+    [RelayCommand]
+    public async Task ToggleRepostAsync() {
+        if (Connection is null) return;
+
+        if (!RepostedByViewer) {
+            if (Post?.Post.Cid is not Cid cid) return;
+            if (Post.Post.Uri is not ATUri uri) return;
+
+            var (repost, err) = await Connection.Protocol.Repo.CreateRepostAsync(cid, uri);
+
+            if (repost is null) {
+                throw new InvalidOperationException(err?.Detail?.Message ?? string.Empty);
+            }
+
+            ViewerRepost = repost.Uri;
+            RepostCount++;
+        }
+        else {
+            var (success, err) = await Connection.Protocol.Repo.DeleteRepostAsync(ViewerRepost!.Rkey);
+
+            if (success is null) {
+                throw new InvalidOperationException(err?.Detail?.Message ?? string.Empty);
+            }
+
+            ViewerRepost = null;
+            RepostCount--;
+        }
+    }
+
+    public void UpdateModifiablesWithPost(PostView post) {
+        ViewerRepost = post.Viewer?.Repost;
+        ViewerLike = post.Viewer?.Like;
+        ReplyCount = post.ReplyCount;
+        RepostCount = post.RepostCount;
+        LikeCount = post.LikeCount;
     }
 }

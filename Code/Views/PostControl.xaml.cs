@@ -3,6 +3,7 @@ using FishyFlip.Models;
 using GreenHill.Helpers;
 using GreenHill.Services;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Media.Playback;
 
@@ -10,13 +11,8 @@ using Image = Microsoft.UI.Xaml.Controls.Image;
 
 namespace GreenHill.Views;
 
-[ObservableObject]
 public partial class PostControl : UserControl, IBaseView<PostViewModel> {
     public PostViewModel ViewModel { get; } = App.GetService<PostViewModel>();
-
-    [ObservableProperty] private GridLength gridRowHeight = new (.5, GridUnitType.Star);
-    [ObservableProperty] private double gridMaxHeight = double.PositiveInfinity;
-    [ObservableProperty] private double gridRowMaxHeight = double.PositiveInfinity;
 
     public DispatcherTimer UpdateTimer { get; } = new () {
         Interval = TimeSpan.FromSeconds(30)
@@ -28,6 +24,12 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
         UpdateTimer.Tick += UpdatePost;
 
         ViewModel.PropertyChanged += VMPropertyChanged;
+    }
+
+    public void ShowRepostFlyout(object? sender, RoutedEventArgs __) {
+        if (sender is not AppBarButton button) return;
+
+        FlyoutBase.ShowAttachedFlyout(button);
     }
 
     public void VMPropertyChanged(object? _, PropertyChangedEventArgs args) {
@@ -44,8 +46,14 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
             LoadOriginalPost();
             LoadMostRecentParent();
 
-            if (ViewModel.IsRepost && ViewModel.Post!.Reply is not null) {
-                ShowReplyTo = true;
+            // if (ViewModel.IsRepost && ViewModel.Post?.Reply?.Parent is not null) {
+            //     ShowReplyTo = true;
+            // }
+
+            ShowReplyTo = false;
+
+            if (ViewModel.Post?.Post is PostView post) {
+                ViewModel.UpdateModifiablesWithPost(post);
             }
         }
     }
@@ -150,8 +158,8 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
         var width = PostColumn.ActualWidth;
 
         if (count == 1) {
-            GridMaxHeight = (2 * width) + 2;
-            GridRowMaxHeight = width;
+            ViewModel.GridMaxHeight = (2 * width) + 2;
+            ViewModel.GridRowMaxHeight = width;
 
             if (PicturesView.Items.First() is GridViewItem item && item.Content is Image image) {
                 var height = Math.Min(
@@ -161,7 +169,7 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
 
                 var rowHeight = (height - 2) / 2;
 
-                GridRowHeight = new (rowHeight, GridUnitType.Pixel);
+                ViewModel.GridRowHeight = new (rowHeight, GridUnitType.Pixel);
 
                 image.Height = height;
                 image.MaxHeight = height;
@@ -169,26 +177,26 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
 
         }
         else {
-            GridMaxHeight = count switch {
+            ViewModel.GridMaxHeight = count switch {
                 2 or 3 => (width / 2) + 2,
                 _ => (2 * width / 3) + 2,
             };
 
-            GridRowHeight = count switch {
+            ViewModel.GridRowHeight = count switch {
                 2 => new (width / 2, GridUnitType.Pixel),
                 3 => new (width / 4, GridUnitType.Pixel),
                 _ => new (width / 3, GridUnitType.Pixel)
             };
 
-            GridRowMaxHeight = GridRowHeight.Value;
+            ViewModel.GridRowMaxHeight = ViewModel.GridRowHeight.Value;
 
             foreach (var (i, elem) in PicturesView.Items.WithIndex()) {
                 if (elem is not GridViewItem item) continue;
                 if (item.Content is not Image image) continue;
 
                 var height = i == 0 && count == 3 ?
-                    2 * (GridRowMaxHeight + 4) :
-                    GridRowMaxHeight;
+                    2 * (ViewModel.GridRowMaxHeight + 4) :
+                    ViewModel.GridRowMaxHeight;
 
                 item.Height = height;
                 item.MaxHeight = height;
@@ -380,4 +388,20 @@ public partial class PostControl : UserControl, IBaseView<PostViewModel> {
         set => SetValue(LinksCommandProperty, value);
     }
 
+    public static readonly DependencyProperty RequestDeletionCommandProperty =
+        DependencyProperty.Register(
+            "RequestDeletionCommand",
+            typeof(IRelayCommand),
+            typeof(PostControl),
+            new (defaultValue: null, propertyChangedCallback: (s, a) => {
+                if (s is not PostControl self) return;
+
+                self.ViewModel.DeleteCommand = (IRelayCommand?) a.NewValue;
+            })
+        );
+
+    public IRelayCommand? RequestDeletionCommand {
+        get => (IRelayCommand?) GetValue(RequestDeletionCommandProperty);
+        set => SetValue(RequestDeletionCommandProperty, value);
+    }
 }

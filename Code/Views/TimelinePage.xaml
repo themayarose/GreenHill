@@ -20,6 +20,7 @@
         <ListView
             ItemsSource="{x:Bind ViewModel.Posts}"
             SelectionMode="None"
+            Loaded="ListViewLoaded"
         >
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="ffm:FeedViewPost">
@@ -28,6 +29,7 @@
                         Post="{x:Bind (ffm:FeedViewPost)}"
                         DisplayProfileCommand="{Binding ViewModel.Parent.DisplayProfileCommand, ElementName=Self}"
                         LinksCommand="{Binding ViewModel.Parent.HyperlinkClickedCommand, ElementName=Self}"
+                        RequestDeletionCommand="{Binding ViewModel.DeletePostCommand, ElementName=Self}"
                     />
                 </DataTemplate>
             </ListView.ItemTemplate>

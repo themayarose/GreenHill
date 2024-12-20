@@ -5,11 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 using GreenHill.Views;
 using GreenHill.Services;
+using CommunityToolkit.WinUI;
+using Microsoft.UI.Dispatching;
 
 namespace GreenHill;
 
 public partial class App : Application {
-    public MainWindow? MainWindow { get; private set; }
+    public static MainWindow MainWindow { get; } = new ();
     public IHost Host { get; }
 
     public App() {
@@ -49,9 +51,22 @@ public partial class App : Application {
         }
     }
 
-    protected override void OnLaunched(LaunchActivatedEventArgs args) {
-        MainWindow ??= new();
-        MainWindow.Activate();
+    protected override void OnLaunched(LaunchActivatedEventArgs args) => MainWindow.Activate();
+
+    public static async Task EnqueueAsync(Action action, DispatcherQueuePriority priority = DispatcherQueuePriority.Normal) {
+        await MainWindow.DispatcherQueue.EnqueueAsync(action, priority);
+    }
+
+    public static async Task EnqueueAsync(Func<Task> task, DispatcherQueuePriority priority = DispatcherQueuePriority.Normal) {
+        await MainWindow.DispatcherQueue.EnqueueAsync(task, priority);
+    }
+
+    public static async Task<T> EnqueueAsync<T>(Func<T> func, DispatcherQueuePriority priority = DispatcherQueuePriority.Normal) {
+        return await MainWindow.DispatcherQueue.EnqueueAsync(func, priority);
+    }
+
+    public static async Task<T> EnqueueAsync<T>(Func<Task<T>> task, DispatcherQueuePriority priority = DispatcherQueuePriority.Normal) {
+        return await MainWindow.DispatcherQueue.EnqueueAsync(task, priority);
     }
 
 }

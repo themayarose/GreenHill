@@ -2,11 +2,11 @@
 using GreenHill.Services;
 using Windows.Security.Credentials;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using GreenHill.Views;
 using GreenHill.Helpers;
 using CommunityToolkit.Mvvm.Messaging.Messages;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using CommunityToolkit.Mvvm.DependencyInjection;
 
 namespace GreenHill.ViewModels;
 
@@ -14,13 +14,20 @@ public partial class MainWindowViewModel(IConnectionService conn, ICredentialSer
     public IConnectionService ConnManager { get; } = conn;
     public ICredentialService Credentials { get; } = cred;
 
-    [ObservableProperty] private string userQuery = string.Empty;
+    [NotifyPropertyChangedFor(nameof(TitleTextBrush))]
+    [ObservableProperty] public new partial bool IsActive { get; set; } = false;
 
-    [ObservableProperty] private PageRequest? startOfTimelineRequest;
+    public SolidColorBrush TitleTextBrush => (SolidColorBrush)
+        App.Current.Resources[IsActive ? "WindowCaptionForeground" : "WindowCaptionForegroundDisabled"];
+
+    [ObservableProperty] public partial string UserQuery { get; set; } = string.Empty;
+
+    [ObservableProperty] public partial PageRequest? StartOfTimelineRequest { get; set; }
 
     [NotifyPropertyChangedFor(nameof(InputFacets))]
     [ObservableProperty]
-    private string input = string.Empty;
+    public partial string Input { get; set; } = string.Empty;
+
 
     public IEnumerable<Facet> InputFacets {
         get {
@@ -37,19 +44,19 @@ public partial class MainWindowViewModel(IConnectionService conn, ICredentialSer
     [NotifyPropertyChangedFor(nameof(Connected))]
     [NotifyPropertyChangedRecipients]
     [ObservableProperty]
-    private SkyConnection? connection = null;
+    public partial SkyConnection? Connection { get; set; } = null;
 
     public bool Connected => Connection is not null;
 
     [NotifyPropertyChangedFor(nameof(Handle))]
     [ObservableProperty]
-    private FeedProfile? currentProfile = null;
+    public partial FeedProfile? CurrentProfile { get; set; } = null;
 
     public string Handle => (CurrentProfile?.Handle is null) ?
         string.Empty :
         $"@{CurrentProfile.Handle}";
 
-    [ObservableProperty] private AutoSuggestBox? searchBox;
+    [ObservableProperty] public partial AutoSuggestBox? SearchBox { get; set; }
 
     [RelayCommand]
     public async Task InitAsync(FrameworkElement root) {

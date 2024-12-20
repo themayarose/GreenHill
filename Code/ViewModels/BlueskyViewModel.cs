@@ -33,8 +33,8 @@ public record NavigationRequestedEventArgs(PageRequest request) {
 }
 
 public partial class BlueskyViewModel : BaseViewModel {
-    [ObservableProperty] private SkyConnection? connection;
-    [ObservableProperty] private bool canGoBack = false;
+    [ObservableProperty] public partial SkyConnection? Connection { get; set; }
+    [ObservableProperty] public partial bool CanGoBack { get; set; } = false;
 
     public event EventHandler<NavigationRequestedEventArgs>? NavigationRequested;
     public event EventHandler? GoBackRequested;
@@ -79,12 +79,12 @@ public partial class BlueskyViewModel : BaseViewModel {
 
         var profile = await Connection.GetProfileAsync(did);
 
-        DisplayProfileCommand.Execute(profile);
+        await DisplayProfileCommand.ExecuteAsync(profile);
     }
 
     [RelayCommand]
-    public void DisplayProfile(FeedProfile profile) {
-        (App.Current as App)!.MainWindow?.DispatcherQueue.TryEnqueue(() => {
+    public async Task DisplayProfile(FeedProfile profile) {
+        await App.EnqueueAsync(() => {
             RequestNavigation(
                 new PageRequest.ProfilePage() { Profile = profile }
             );

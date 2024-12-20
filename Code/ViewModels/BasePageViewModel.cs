@@ -8,20 +8,20 @@ namespace GreenHill.ViewModels;
 public abstract partial class BasePageViewModel : BaseViewModel {
     [NotifyPropertyChangedFor(nameof(Parent))]
     [ObservableProperty]
-    private WeakReference<BlueskyViewModel>? parentViewModel;
+    public partial WeakReference<BlueskyViewModel>? ParentViewModel { get; set; }
 
     public BlueskyViewModel? Parent => ParentViewModel?.TryGetTarget(out var vm) ?? false ?
         vm :
         null;
 
-    [ObservableProperty] private SkyConnection? connection;
+    [ObservableProperty] public partial SkyConnection? Connection { get; set; }
 
     [NotifyPropertyChangedFor(nameof(Handle))]
     [NotifyPropertyChangedFor(nameof(Avatar))]
     [NotifyPropertyChangedFor(nameof(Banner))]
     [NotifyPropertyChangedFor(nameof(DescriptionFacets))]
     [ObservableProperty]
-    private FeedProfile? profile;
+    public partial FeedProfile? Profile { get; set; }
 
     public string Handle => (Profile?.Handle is not null) ?
         $"@{Profile.Handle}" :

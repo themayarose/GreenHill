@@ -26,7 +26,7 @@
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="64" />
+            <ColumnDefinition Width="48" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -208,14 +208,15 @@
                 HorizontalAlignment="Stretch"
             >
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="auto" /> <!-- Row=0: pic, name, time -->
-                    <RowDefinition Height="auto" /> <!-- Row=1: pic, reply to -->
-                    <RowDefinition Height="auto" /> <!-- Row=2: pic, text -->
-                    <RowDefinition Height="auto" /> <!-- Row=3: pic, embedded pictures -->
-                    <RowDefinition Height="auto" /> <!-- Row=4: pic, embedded external -->
-                    <RowDefinition Height="auto" /> <!-- Row=5: pic, embedded video -->
-                    <RowDefinition Height="auto" /> <!-- Row=6: pic, embedded quote -->
-                    <RowDefinition Height="auto" /> <!-- Row=7: pic, stats, actions -->
+                    <RowDefinition Height="auto" /> <!-- Row=0: name, time -->
+                    <RowDefinition Height="auto" /> <!-- Row=1: reply to -->
+                    <RowDefinition Height="auto" /> <!-- Row=2: labels -->
+                    <RowDefinition Height="auto" /> <!-- Row=3: text -->
+                    <RowDefinition Height="auto" /> <!-- Row=4: embedded pictures -->
+                    <RowDefinition Height="auto" /> <!-- Row=5: embedded external -->
+                    <RowDefinition Height="auto" /> <!-- Row=6: embedded video -->
+                    <RowDefinition Height="auto" /> <!-- Row=7: embedded quote -->
+                    <RowDefinition Height="auto" /> <!-- Row=8: stats, actions -->
                 </Grid.RowDefinitions>
 
                 <Grid
@@ -288,8 +289,36 @@
                     </TextBlock>
                 </Grid>
 
-                <RichTextBlock
+                <Grid
                     Grid.Row="2"
+                    Margin="0,0,0,4"
+                    HorizontalAlignment="Stretch"
+                    Visibility="{x:Bind ViewModel.HasPostLabels, Mode=OneWay}"
+                >
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="4"
+                    >
+                        <ItemsRepeater
+                            ItemsSource="{x:Bind ViewModel.PostLabels, Mode=OneWay}"
+                        >
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <TextBlock
+                                        TextTrimming="CharacterEllipsis"
+                                        MaxLines="1"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Foreground="{StaticResource TextFillColorTertiaryBrush}"
+                                        Text="{x:Bind (x:String)}"
+                                    />
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </StackPanel>
+                </Grid>
+
+                <RichTextBlock
+                    Grid.Row="3"
                     IsTextSelectionEnabled="True"
                     TextWrapping="WrapWholeWords"
                     VerticalAlignment="Top"
@@ -308,7 +337,7 @@
 
                 <GridView
                     x:Name="PicturesView"
-                    Grid.Row="3"
+                    Grid.Row="4"
                     Margin="0,0,0,4"
                     HorizontalAlignment="Stretch"
                     Padding="0"
@@ -321,16 +350,16 @@
                             <Grid
                                 RowSpacing="2"
                                 ColumnSpacing="2"
-                                MaxHeight="{Binding GridMaxHeight, ElementName=Self}"
+                                MaxHeight="{Binding ViewModel.GridMaxHeight, ElementName=Self}"
                             >
                                 <Grid.RowDefinitions>
                                     <RowDefinition
-                                        Height="{Binding GridRowHeight, ElementName=Self}"
-                                        MaxHeight="{Binding GridRowMaxHeight, ElementName=Self}"
+                                        Height="{Binding ViewModel.GridRowHeight, ElementName=Self}"
+                                        MaxHeight="{Binding ViewModel.GridRowMaxHeight, ElementName=Self}"
                                     />
                                     <RowDefinition
-                                        Height="{Binding GridRowHeight, ElementName=Self}"
-                                        MaxHeight="{Binding GridRowMaxHeight, ElementName=Self}"
+                                        Height="{Binding ViewModel.GridRowHeight, ElementName=Self}"
+                                        MaxHeight="{Binding ViewModel.GridRowMaxHeight, ElementName=Self}"
                                     />
                                 </Grid.RowDefinitions>
 
@@ -344,7 +373,7 @@
                 </GridView>
 
                 <Grid
-                    Grid.Row="4"
+                    Grid.Row="5"
                     Margin="0,0,0,4"
                     HorizontalAlignment="Stretch"
                     Padding="0"
@@ -377,6 +406,7 @@
                             TextTrimming="CharacterEllipsis"
                             MaxLines="1"
                             Margin="0,0,0,4"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.ExternalEmbed.Title, Mode=OneWay}"
                         >
                             <Hyperlink
                                 UnderlineStyle="None"
@@ -392,6 +422,7 @@
                             MaxLines="3"
                             Style="{StaticResource CaptionTextBlockStyle}"
                             Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.ExternalEmbed.Description, Mode=OneWay}"
                         >
                             <Run Text="{x:Bind ViewModel.ExternalEmbed.Description, Mode=OneWay}" />
                         </TextBlock>
@@ -399,7 +430,7 @@
                 </Grid>
 
                 <Grid
-                    Grid.Row="5"
+                    Grid.Row="6"
                     Visibility="{x:Bind ViewModel.HasEmbeddedVideo, Mode=OneWay}"
                     Margin="0,0,0,4"
                     HorizontalAlignment="Stretch"
@@ -420,7 +451,7 @@
 
                 <Grid
                     x:Name="QuoteContainer"
-                    Grid.Row="6"
+                    Grid.Row="7"
                     Padding="4,4,10,8"
                     Margin="-2,0,2,4"
                     HorizontalAlignment="Stretch"
@@ -433,7 +464,7 @@
 
 
                 <Grid
-                    Grid.Row="7"
+                    Grid.Row="8"
                     Margin="0,0,0,4"
                     HorizontalAlignment="Stretch"
                     Visibility="{x:Bind ViewModel.ShowInteractionButtons, Mode=OneWay}"
@@ -476,7 +507,7 @@
                                 UnderlineStyle="None"
                                 FontWeight="Semibold"
                             >
-                                <Run Text="{x:Bind ViewModel.Post.Post.ReplyCount, Mode=OneWay}" />
+                                <Run Text="{x:Bind ViewModel.ReplyCountText, Mode=OneWay}" />
                             </Hyperlink>
                         </TextBlock>
                     </StackPanel>
@@ -493,6 +524,7 @@
                             VerticalAlignment="Center"
                             IsCompact="True"
                             Padding="0"
+                            Click="ShowRepostFlyout"
                         >
                             <AppBarButton.Icon>
                                 <FontIcon
@@ -502,6 +534,29 @@
                                     Foreground="{x:Bind ViewModel.RepostColor, Mode=OneWay}"
                                 />
                             </AppBarButton.Icon>
+
+                            <FlyoutBase.AttachedFlyout>
+                                <MenuFlyout
+                                    Placement="BottomEdgeAlignedLeft"
+                                >
+                                    <MenuFlyoutItem
+                                        Text="{x:Bind ViewModel.RepostMenuText, Mode=OneWay}"
+                                        Command="{x:Bind ViewModel.ToggleRepostCommand}"
+                                    >
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE8EE;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+
+                                    <MenuFlyoutItem
+                                        Text="Quote"
+                                    >
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE9B1;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                </MenuFlyout>
+                            </FlyoutBase.AttachedFlyout>
                         </AppBarButton>
 
                         <TextBlock
@@ -513,7 +568,7 @@
                                 UnderlineStyle="None"
                                 FontWeight="Semibold"
                             >
-                                <Run Text="{x:Bind ViewModel.Post.Post.RepostCount, Mode=OneWay}" />
+                                <Run Text="{x:Bind ViewModel.RepostCountText, Mode=OneWay}" />
                             </Hyperlink>
                         </TextBlock>
                     </StackPanel>
@@ -530,6 +585,7 @@
                             VerticalAlignment="Center"
                             IsCompact="True"
                             Padding="0"
+                            Command="{x:Bind ViewModel.ToggleLikeCommand}"
                         >
                             <AppBarButton.Icon>
                                 <FontIcon
@@ -550,7 +606,7 @@
                                 UnderlineStyle="None"
                                 FontWeight="Semibold"
                             >
-                                <Run Text="{x:Bind ViewModel.Post.Post.LikeCount, Mode=OneWay}" />
+                                <Run Text="{x:Bind ViewModel.LikeCountText, Mode=OneWay}" />
                             </Hyperlink>
                         </TextBlock>
                     </StackPanel>

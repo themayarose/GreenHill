@@ -1,13 +1,35 @@
-using System.Collections.ObjectModel;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Collections;
+using CommunityToolkit.WinUI;
+using CommunityToolkit.WinUI.Collections;
 using FishyFlip.Models;
 using Ipfs;
+using Microsoft.UI.Xaml.Data;
+using Windows.Foundation;
 
 namespace GreenHill.ViewModels;
 
-public partial class TimelineViewModel : BasePageViewModel {
-    [ObservableProperty] private string cursor = string.Empty;
+public class PostDateComparer : IComparer {
+    public int Compare(object? f, object? s) {
+        if (f is not FeedViewPost first) return 0;
+        if (s is not FeedViewPost second) return 0;
 
-    public ObservableCollection<FeedViewPost> Posts { get; } = [];
+        var firstDate = first?.Reason?.IndexedAt ?? first?.Post?.IndexedAt;
+        var secondDate = second?.Reason?.IndexedAt ?? second?.Post?.IndexedAt;
+
+        if (firstDate is null || secondDate is null) return 0;
+        if (firstDate == secondDate) return 0;
+        else if (firstDate > secondDate) return 1;
+        else return -1;
+    }
+}
+
+public partial class TimelineViewModel : BasePageViewModel {
+    [ObservableProperty] private partial string Cursor { get; set; } = string.Empty;
+
+    public AdvancedCollectionView Posts { get; } = new (
+        (List<FeedViewPost>) [], true
+    );
 
     [RelayCommand]
     public async Task RefreshTimelineAsync() {
@@ -15,18 +37,44 @@ public partial class TimelineViewModel : BasePageViewModel {
 
         var timeline = await Connection.GetTimelineAsync(string.Empty);
 
-        await FilterAndAddPostsCommand.ExecuteAsync(timeline.Feed);
+        if (!FilterAndAddPostsCommand.IsRunning) {
+            await FilterAndAddPostsCommand.ExecuteAsync(timeline.Feed);
+        }
     }
 
     [RelayCommand]
     public async Task InitTimelineAsync() {
         if (Connection is null) return;
 
-        var timeline = await Connection.GetTimelineAsync(string.Empty, limit: 100);
+        var timeline = await Connection.GetTimelineAsync(string.Empty);
 
         Cursor = timeline.Cursor ?? string.Empty;
 
-        await FilterAndAddPostsCommand.ExecuteAsync(timeline.Feed);
+        if (!FilterAndAddPostsCommand.IsRunning) {
+            await FilterAndAddPostsCommand.ExecuteAsync(timeline.Feed);
+        }
+    }
+
+    [RelayCommand]
+    public void DeletePost(ATUri uri) {
+        var toDelete = from post in Posts
+            where post is FeedViewPost p && p.Post.Uri == uri
+            select post;
+
+        foreach (var post in toDelete) Posts.Remove(post);
+    }
+
+    [RelayCommand]
+    public async Task LoadMoreItemsAsync() {
+        if (Connection is null) return;
+
+        var timeline = await Connection.GetTimelineAsync(Cursor);
+
+        await App.EnqueueAsync(() => Cursor = timeline.Cursor ?? string.Empty);
+
+        if (!FilterAndAddPostsCommand.IsRunning) {
+            await FilterAndAddPostsCommand.ExecuteAsync(timeline.Feed);
+        }
     }
 
     public override async Task UpdateWithRequestAsync(PageRequest request) {
@@ -34,13 +82,15 @@ public partial class TimelineViewModel : BasePageViewModel {
 
         if (request is not PageRequest.TimelinePage sRequest) return;
 
-        if (Posts.Any()) {
+        if (Posts.Count != 0) {
             await RefreshTimelineCommand.ExecuteAsync(null);
         }
         else {
             Cursor = sRequest.Cursor;
 
             Posts.Clear();
+
+            Posts.SortDescriptions.Add(new (SortDirection.Descending, new PostDateComparer()));
 
             await InitTimelineCommand.ExecuteAsync(null);
         }
@@ -55,43 +105,33 @@ public partial class TimelineViewModel : BasePageViewModel {
 
         var filterCids = GetParentCids(filteredIncoming)
             .Concat(newRootCids)
-            .Concat(Posts.Select(p => p.Post?.Cid));
+            .Concat(Posts.Select(p => (p as FeedViewPost)!.Post?.Cid));
 
         filteredIncoming = filteredIncoming
-            .Where(p => !filterCids.Contains(p.Post?.Cid))
+            .Where(p => !filterCids.Contains(p.Post?.Cid) || p.Reason is not null)
             .Where(FollowingOnly)
-            .DistinctBy(p => p.Post?.Cid);
+            .DistinctBy(p => p.Post?.Cid)
         ;
 
-        if (filteredIncoming.Any()) {
-            if (Posts.Any()) {
-                var cidsToRemove = GetParentCids(filteredIncoming).Concat(GetRootCids(filteredIncoming));
-                List<FeedViewPost> postsToRemove = [..
-                    from post in Posts
-                    where cidsToRemove.Contains(post.Post?.Cid)
-                    select post
-                ];
+        var cidsToRemove = GetParentCids(filteredIncoming)
+            .Concat(GetRootCids(filteredIncoming))
+            .Concat(filteredIncoming.Select(p => p.Post?.Cid))
+        ;
 
+        List<object> postsToRemove = [..
+            from post in Posts
+            where cidsToRemove.Contains((post as FeedViewPost)!.Post?.Cid)
+            select post
+        ];
+
+        filteredIncoming = (List<FeedViewPost>) [.. filteredIncoming];
+
+        await App.EnqueueAsync(() => {
+            using (Posts.DeferRefresh()) {
                 foreach (var post in postsToRemove) Posts.Remove(post);
-
-                var lastPostsDate = Posts.Last()?.Reason?.IndexedAt ?? Posts.Last()?.Post?.IndexedAt;
-                var firstIncomingDate = filteredIncoming.First()?.Reason?.IndexedAt ?? filteredIncoming.First()?.Post?.IndexedAt;
-                
-                if (lastPostsDate >= firstIncomingDate) {
-                    foreach (var post in filteredIncoming) Posts.Add(post);
-                }
-                else {
-                    foreach (var post in filteredIncoming.Reverse()) Posts.Insert(0, post);
-                }
-            }
-            else {
                 foreach (var post in filteredIncoming) Posts.Add(post);
             }
-
-
-        }
-
-        await Task.CompletedTask;
+        });
     }
 
     private bool FollowingOnly(FeedViewPost post) =>

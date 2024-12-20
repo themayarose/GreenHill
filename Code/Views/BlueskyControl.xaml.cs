@@ -6,41 +6,22 @@ using GreenHill.Helpers;
 
 namespace GreenHill.Views;
 
-public record BlueskyControlWidth(double width) {
-    public double Width { get; } = width;
-}
-
-[ObservableRecipient]
-[ObservableObject]
 public partial class BlueskyControl : UserControl, IBaseView<BlueskyViewModel> {
     public BlueskyViewModel ViewModel { get; } = App.GetService<BlueskyViewModel>();
-
-    [NotifyPropertyChangedRecipients]
-    [ObservableProperty]
-    private BlueskyControlWidth? controlWidth;
 
     private string? EmptyNavState { get; set; }
 
     public BlueskyControl() {
-        Messenger = App.GetService<IMessenger>();
-
         InitializeComponent();
 
         ViewModel.NavigationRequested += NavigationRequested;
         ViewModel.GoBackRequested += GoBackRequested;
-
-        Loaded += ControlLoaded;
-        SizeChanged += (_, args) => ControlWidth = new (args.NewSize.Width);
     }
 
     ~BlueskyControl() {
         ViewModel.NavigationRequested -= NavigationRequested;
         ViewModel.GoBackRequested -= GoBackRequested;
     }
-
-    public void ControlLoaded(object sender, RoutedEventArgs args) {
-        ControlWidth = new (ActualWidth);
-    } 
 
     public void NavigationRequested(object? sender, NavigationRequestedEventArgs args) {
         if (args.Request?.Target is not Type target) return;

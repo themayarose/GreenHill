@@ -18,94 +18,55 @@
     </Window.SystemBackdrop>
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <muxc:TitleBar
+        <Grid
             x:Name="TitleBar"
-            Grid.Row="0"
-            Title="GreenHill"
-            Subtitle="for BlueSky"
+            Canvas.ZIndex="1"
+            VerticalAlignment="Top"
             Height="48"
-            IsPaneToggleButtonVisible="True"
-            IsBackButtonVisible="False"
-            PaneToggleRequested="TitleBarPaneToggleRequested"
+            IsHitTestVisible="True"
+            ColumnSpacing="8"
+            Padding="0,0,138,0"
         >
-            <muxc:TitleBar.IconSource>
-                <muxc:ImageIconSource ImageSource="Assets/StoreLogo.png"/>
-            </muxc:TitleBar.IconSource>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="auto" />
+            </Grid.ColumnDefinitions>
 
-            <muxc:TitleBar.Footer>
-                <Grid
-                    RowSpacing="0"
-                    ColumnSpacing="8"
-                >
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height=".5*" />
-                        <RowDefinition Height=".5*" />
-                    </Grid.RowDefinitions>
+            <Image
+                Grid.Column="0"
+                Width="16"
+                Height="16"
+                Source="Assets/StoreLogo.png"
 
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="auto" />
-                        <ColumnDefinition Width="auto" />
-                    </Grid.ColumnDefinitions>
+                VerticalAlignment="Center"
+            />
 
-                    <PersonPicture
-                        Grid.Row="0"
-                        Grid.Column="0"
-                        Grid.RowSpan="2"
-                        ProfilePicture="{x:Bind ViewModel.CurrentProfile.Avatar, Mode=OneWay}"
-                        VerticalAlignment="Center"
-                        Height="32"
-                        Width="32"
-                        PointerEntered="PersonPicturePointerEntered"
-                        PointerExited="PersonPicturePointerExited"
-                        PointerPressed="PersonPicturePointerPressed"
-                        PointerReleased="PersonPicturePointerReleased"
-                    >
-                        <FlyoutBase.AttachedFlyout>
-                            <Flyout
-                                AllowFocusOnInteraction="True"
-                                Closing="ProfileFlyoutClosing"
-                                Closed="ProfileFlyoutClosed"
-                            >
-                                <Flyout.FlyoutPresenterStyle>
-                                    <Style TargetType="FlyoutPresenter">
-                                        <Setter Property="Padding" Value="0" />
-                                        <Setter Property="CornerRadius" Value="8" />
-                                        <Setter Property="Background" Value="{StaticResource AcrylicBackgroundFillColorBaseBrush}" />
-                                    </Style>
-                                </Flyout.FlyoutPresenterStyle>
-                            </Flyout>
-                        </FlyoutBase.AttachedFlyout>
-                    </PersonPicture>
+            <TextBlock
+                Grid.Column="1"
+                Text="GreenHill"
+                Foreground="{x:Bind ViewModel.TitleTextBrush, Mode=OneWay}"
+                VerticalAlignment="Center"
+                TextWrapping="NoWrap"
+                Style="{StaticResource CaptionTextBlockStyle}"
+                FontWeight="Bold"
+            />
 
-                    <TextBlock
-                        Grid.Row="0"
-                        Grid.Column="1"
-                        Text="{x:Bind ViewModel.CurrentProfile.DisplayName, Mode=OneWay}"
-                        VerticalAlignment="Bottom"
-                        Margin="0,0,0,-1"
-                    />
-
-                    <TextBlock
-                        Grid.Row="1"
-                        Grid.Column="1"
-                        FontWeight="Bold"
-                        Style="{StaticResource CaptionTextBlockStyle}"
-                        Foreground="{StaticResource TextFillColorSecondaryBrush}"
-                        VerticalAlignment="Top"
-                        Text="{x:Bind ViewModel.Handle, Mode=OneWay}"
-                        Margin="0,-1,0,0"
-                    />
-                </Grid>
-            </muxc:TitleBar.Footer>
+            <TextBlock
+                Grid.Column="2"
+                Text="for BlueSky"
+                Foreground="{StaticResource WindowCaptionForegroundDisabled}"
+                VerticalAlignment="Center"
+                TextWrapping="NoWrap"
+                Style="{StaticResource CaptionTextBlockStyle}"
+            />
 
             <AutoSuggestBox
                 x:Name="SearchBox"
-                Margin="0,8"
+                Grid.Column="3"
+                VerticalAlignment="Center"
                 PlaceholderText="@someone.bsky.social / #hashtag / words..."
                 Text="{x:Bind ViewModel.UserQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 QueryIcon="Find"
@@ -127,16 +88,83 @@
                     </Flyout>
                 </FlyoutBase.AttachedFlyout>
             </AutoSuggestBox>
-        </muxc:TitleBar>
+
+            <Grid
+                x:Name="LoginArea"
+                Grid.Column="4"
+                RowSpacing="0"
+                ColumnSpacing="8"
+            >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height=".5*" />
+                    <RowDefinition Height=".5*" />
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+
+                <PersonPicture
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Grid.RowSpan="2"
+                    ProfilePicture="{x:Bind ViewModel.CurrentProfile.Avatar, Mode=OneWay}"
+                    VerticalAlignment="Center"
+                    Height="32"
+                    Width="32"
+                    PointerEntered="PersonPicturePointerEntered"
+                    PointerExited="PersonPicturePointerExited"
+                    PointerPressed="PersonPicturePointerPressed"
+                    PointerReleased="PersonPicturePointerReleased"
+                >
+                    <FlyoutBase.AttachedFlyout>
+                        <Flyout
+                            AllowFocusOnInteraction="True"
+                            Closing="ProfileFlyoutClosing"
+                            Closed="ProfileFlyoutClosed"
+                        >
+                            <Flyout.FlyoutPresenterStyle>
+                                <Style TargetType="FlyoutPresenter">
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="CornerRadius" Value="8" />
+                                    <Setter Property="Background" Value="{StaticResource AcrylicBackgroundFillColorBaseBrush}" />
+                                </Style>
+                            </Flyout.FlyoutPresenterStyle>
+                        </Flyout>
+                    </FlyoutBase.AttachedFlyout>
+                </PersonPicture>
+
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Text="{x:Bind ViewModel.CurrentProfile.DisplayName, Mode=OneWay}"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,0,-1"
+                />
+
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    FontWeight="Bold"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Foreground="{StaticResource TextFillColorSecondaryBrush}"
+                    VerticalAlignment="Top"
+                    Text="{x:Bind ViewModel.Handle, Mode=OneWay}"
+                    Margin="0,-1,0,0"
+                />
+            </Grid>
+
+        </Grid>
 
         <NavigationView
             x:Name="NavView"
-            Grid.Row="1"
+            Canvas.ZIndex="0"
             IsSettingsVisible="True"
             PaneDisplayMode="Left"
             IsPaneOpen="False"
             IsBackButtonVisible="Collapsed"
-            IsPaneToggleButtonVisible="False"
+            IsPaneToggleButtonVisible="True"
         >
             <Grid>
                 <Grid.ColumnDefinitions>

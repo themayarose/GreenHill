@@ -99,7 +99,7 @@
                                 FontWeight="Semibold"
                             >
                                 <Run
-                                    Text="{x:Bind ViewModel.Profile.FollowersCount, Mode=OneWay}"
+                                    Text="{x:Bind ViewModel.FollowersCountText, Mode=OneWay}"
                                 />
                                 <Run Text="followers" />
                             </Hyperlink>
@@ -113,7 +113,7 @@
                                 FontWeight="Semibold"
                             >
                                 <Run
-                                    Text="{x:Bind ViewModel.Profile.FollowsCount, Mode=OneWay}"
+                                    Text="{x:Bind ViewModel.FollowsCountText, Mode=OneWay}"
                                 />
                                 <Run Text="following" />
                             </Hyperlink>
@@ -128,7 +128,7 @@
                                 ui:HyperlinkExtensions.Command="{x:Bind ViewModel.GoToUserPostsCommand}"
                             >
                                 <Run
-                                    Text="{x:Bind ViewModel.Profile.PostsCount, Mode=OneWay}"
+                                    Text="{x:Bind ViewModel.PostsCountText, Mode=OneWay}"
                                 />
                                 <Run Text="posts" />
                             </Hyperlink>

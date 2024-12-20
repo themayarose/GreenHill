@@ -89,7 +89,7 @@ public static partial class RichTextExtensions {
         SetFacets(rtb, []);
     }
 
-    public static void FacetsChanged(object sender, DependencyPropertyChangedEventArgs args) {
+    public static async void FacetsChanged(object sender, DependencyPropertyChangedEventArgs args) {
         if (sender is not RichTextBlock rtb) return;
 
         string currentText = rtb.GetValue(TextProperty) as string ?? string.Empty;
@@ -97,7 +97,7 @@ public static partial class RichTextExtensions {
         IEnumerable<Facet> facets = args.NewValue as IEnumerable<Facet> ?? [];
         IEnumerable<Facet> oldFacets = args.OldValue as IEnumerable<Facet> ?? [];
 
-        (App.Current as App)!.MainWindow?.DispatcherQueue.TryEnqueue(async () => {
+        await App.EnqueueAsync(async () => {
             await rtb.BuildAll(currentText, facets);
 
             rtb.InvalidateMeasure();

@@ -3,6 +3,6 @@ using GreenHill.Services;
 namespace GreenHill.ViewModels;
 
 public partial class LoginViewModel : BaseViewModel {
-    [ObservableProperty] private string userName = string.Empty;
-    [ObservableProperty] private string password = string.Empty;
+    [ObservableProperty] public partial string UserName { get; set; } = string.Empty;
+    [ObservableProperty] public partial string Password { get; set; } = string.Empty;
 }
