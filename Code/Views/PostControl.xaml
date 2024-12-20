@@ -326,14 +326,9 @@
                     HorizontalAlignment="Stretch"
                     h:RichTextExtensions.Text="{x:Bind ViewModel.Post.Post.Record.Text, Mode=OneWay}"
                     h:RichTextExtensions.Facets="{x:Bind ViewModel.Post.Post.Record.Facets, Mode=OneWay}"
+                    h:RichTextExtensions.LinksCommand="{x:Bind ViewModel.LinksCommand, Mode=OneWay}"
                     Visibility="{x:Bind ViewModel.ContainsText, Mode=OneWay}"
-                >
-                    <i:Interaction.Behaviors>
-                        <b:HyperlinkClickBehavior
-                            LinksCommand="{x:Bind ViewModel.LinksCommand, Mode=OneWay}"
-                        />
-                    </i:Interaction.Behaviors>
-                </RichTextBlock>
+                />
 
                 <GridView
                     x:Name="PicturesView"

@@ -139,9 +139,9 @@ public partial class PostViewModel : BaseViewModel {
 
     public string RepostMenuText => RepostedByViewer ? "Undo repost" : "Repost";
 
-    public SolidColorBrush? RepostColor => RepostedByViewer ?
-        App.Current.Resources["AccentTextFillColorPrimaryBrush"] as SolidColorBrush :
-        App.Current.Resources["TextFillColorPrimaryBrush"] as SolidColorBrush ;
+    public SolidColorBrush? RepostColor => (SolidColorBrush) App.Current.Resources[
+        RepostedByViewer ? "AccentTextFillColorPrimaryBrush" : "TextFillColorPrimaryBrush"
+    ];
 
     [ObservableProperty] public partial IRelayCommand? DisplayProfileCommand { get; set; }
     [ObservableProperty] public partial IRelayCommand? DisplayPostCommand { get; set; }

@@ -11,7 +11,7 @@ using System.Text;
 using urldetector.detection;
 using Windows.Devices.Perception;
 using Microsoft.Xaml.Interactivity;
-using GreenHill.Behaviors;
+using CommunityToolkit.WinUI;
 
 namespace GreenHill.Helpers;
 
@@ -66,6 +66,17 @@ public static partial class RichTextExtensions {
     public static Facet? GetFacet(Hyperlink link) => link.GetValue(FacetProperty) as Facet;
     public static void SetFacet(Hyperlink link, Facet? facet) => link.SetValue(FacetProperty, facet);
 
+    public static readonly DependencyProperty LinksCommandProperty =
+        DependencyProperty.RegisterAttached(
+            "LinksCommand",
+            typeof(IRelayCommand),
+            typeof(RichTextBlock),
+            new (defaultValue: null, propertyChangedCallback: LinksCommandChanged)
+        );
+
+    public static IRelayCommand? GetLinksCommand(RichTextBlock block) => block.GetValue(LinksCommandProperty) as IRelayCommand;
+    public static void SetLinksCommand(RichTextBlock block, IRelayCommand? cmd) => block.SetValue(LinksCommandProperty, cmd);
+
     public static readonly DependencyProperty FacetTextProperty =
         DependencyProperty.RegisterAttached(
             "FacetText",
@@ -76,6 +87,32 @@ public static partial class RichTextExtensions {
 
     public static string? GetFacetText(Hyperlink link) => link.GetValue(FacetTextProperty) as string;
     public static void SetFacetText(Hyperlink link, string? text) => link.SetValue(FacetTextProperty, text);
+
+    public static void LinksCommandChanged(object sender, DependencyPropertyChangedEventArgs _) {
+        if (sender is not RichTextBlock rtb) return;
+        if (GetLinksCommand(rtb) is not IRelayCommand cmd) return;
+
+        var links =
+            from block in rtb.Blocks
+            where block is Paragraph
+            from inline in (block as Paragraph)!.Inlines
+            where inline is Hyperlink
+            select (inline as Hyperlink)!
+        ;
+
+        foreach (var link in links) {
+            if (link is null) continue;
+
+            if (link.GetValue(FacetProperty) is not Facet facet) continue;
+            if (link.GetValue(FacetTextProperty) is not string text) continue;
+
+            link.SetValue(HyperlinkExtensions.CommandProperty, cmd);
+            link.SetValue(HyperlinkExtensions.CommandParameterProperty, new HyperlinkClickedArgs() {
+                Facet = facet,
+                Text = text
+            });
+        }
+    }
 
     public static void TextChanged(object sender, DependencyPropertyChangedEventArgs args) {
         if (sender is not RichTextBlock rtb) return;
@@ -102,13 +139,7 @@ public static partial class RichTextExtensions {
 
             rtb.InvalidateMeasure();
 
-            var behaviors = (BehaviorCollection) rtb.GetValue(Interaction.BehaviorsProperty);
-
-            foreach (var b in behaviors) {
-                if (b is not HyperlinkClickBehavior behavior) continue;
-
-                behavior.RemakeLinks();
-            }
+            LinksCommandChanged(rtb, args);
         });
     }
 

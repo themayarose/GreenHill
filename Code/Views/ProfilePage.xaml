@@ -147,13 +147,8 @@
                 Padding="16,0"
                 h:RichTextExtensions.Text="{x:Bind ViewModel.Profile.Description, Mode=OneWay}"
                 h:RichTextExtensions.Facets="{x:Bind ViewModel.DescriptionFacets, Mode=OneWay}"
-            >
-                <i:Interaction.Behaviors>
-                    <b:HyperlinkClickBehavior
-                        LinksCommand="{x:Bind ViewModel.Parent.HyperlinkClickedCommand}"
-                    />
-                </i:Interaction.Behaviors>
-            </RichTextBlock>
+                h:RichTextExtensions.LinksCommand="{x:Bind ViewModel.Parent.HyperlinkClickedCommand, Mode=OneWay}"
+            />
             
             <TextBlock
                 Grid.Row="3"
